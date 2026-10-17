@@ -48,6 +48,16 @@ src/                    Frontend del panel
 6. Abrir el panel, pulsar **"Primera vez: crear cuenta de administrador"** con uno de los correos de `ADMIN_EMAILS`.
 7. Pulsar **📥 Importar** y elegir el archivo `Catalogo Octubre 2026.html` para traer categorías, productos, imágenes y ajustes.
 
+   Alternativa sin pasar por el panel (desde la terminal, con la CLI ya logueada):
+   ```bash
+   # 1) URL temporal de subida
+   npx convex run importar:urlSubidaInterna
+   # 2) subir el HTML (o su JSON) a esa URL
+   curl -X POST -H "Content-Type: text/html" --data-binary "@Catalogo Octubre 2026.html" "<URL>"
+   # 3) procesar en el servidor con el storageId que devuelve el paso 2
+   npx convex run importar:desdeArchivo '{"storageId":"<ID>","reemplazar":true}'
+   ```
+
 ## Despliegue
 
 - **Backend:** `npx convex deploy` crea/actualiza el deployment de producción. Configura allí las mismas variables (`ADMIN_EMAILS`, `SITE_URL` con la URL pública del panel, llaves JWT).
