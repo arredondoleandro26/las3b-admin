@@ -35,10 +35,11 @@ src/                    Frontend del panel
    |---|---|
    | `ADMIN_EMAILS` | Correos autorizados, separados por coma. Ej: `dueno@gmail.com,ayudante@gmail.com` |
    | `SITE_URL` | URL del panel (en desarrollo `http://localhost:5174`) |
-   | `JWT_PRIVATE_KEY` y `JWKS` | Las genera `npx @convex-dev/auth` (ver paso 4) |
-4. Inicializar Convex Auth (crea las llaves JWT y configura `SITE_URL`):
+   | `JWT_PRIVATE_KEY` y `JWKS` | Las genera `node scripts/generar-llaves-auth.mjs` (ver paso 4) |
+4. Generar las llaves JWT de Convex Auth y configurar `SITE_URL`:
    ```bash
-   npx @convex-dev/auth
+   node scripts/generar-llaves-auth.mjs
+   npx convex env set SITE_URL http://localhost:5174
    ```
 5. Levantar todo:
    ```bash
