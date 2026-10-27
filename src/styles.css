@@ -102,6 +102,8 @@ body.searching .hero,body.searching .tiles-wrap{display:none}
 .tag{display:inline-flex;align-items:flex-start;gap:1px;background:var(--yellow);color:#17110a;padding:3px 12px 3px 9px;border-radius:10px;box-shadow:0 3px 0 var(--yellow-d);transform:rotate(-2.5deg);font-family:var(--font-price);white-space:nowrap}
 .tag .cur{font-size:.85rem;margin-top:5px}
 .tag .num{font-size:1.85rem;line-height:1.1;letter-spacing:-1px}
+.cu{font-size:.7rem;font-weight:800;color:var(--muted);letter-spacing:.3px;white-space:nowrap}
+.tag .cu{font-family:var(--font);font-size:.62rem;color:inherit;opacity:.8;align-self:flex-end;margin:0 0 6px 5px;letter-spacing:.2px}
 .qty{display:flex;align-items:center}
 .add{border:0;border-radius:999px;background:var(--brand);color:#fff;font-weight:700;font-size:.82rem;padding:8px 14px}
 .add:hover{background:var(--brand-d)}
@@ -136,7 +138,8 @@ body.searching .hero,body.searching .tiles-wrap{display:none}
 .card.edit textarea:focus,.card.edit input:focus,.card.edit select:focus{border-color:var(--brand);outline:none}
 .row2{display:flex;gap:8px;align-items:center}
 .money{display:flex;align-items:center;gap:5px;font-weight:800;flex:1}
-.money input{font-family:var(--font-price);font-size:1.05rem!important}
+.money input{font-family:var(--font-price);font-size:1.05rem!important;min-width:0}
+.money .cu{flex:none;font-size:.78rem}
 .ofl{display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700}
 .ofl input{width:17px;height:17px;accent-color:var(--red)}
 .danger{border:0;background:none;color:var(--red);font-size:.8rem;font-weight:700;padding:4px;text-align:left}
@@ -245,7 +248,7 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none!importa
 .selbar button{border:0;border-radius:10px;padding:8px 13px;font-weight:700;font-size:.82rem;background:rgba(255,255,255,.14);color:#fff}
 .selbar button:hover{background:rgba(255,255,255,.24)}
 .selbar button.go{background:var(--yellow);color:#1b1b1b}
-.toast.act{pointer-events:auto}
+.toast.act.show{pointer-events:auto}
 .toast button{margin-left:12px;border:0;border-radius:8px;padding:5px 13px;background:var(--yellow);color:#1b1b1b;font-weight:800}
 dialog.nc{width:min(520px,calc(100% - 24px))}
 dialog.nc menu{flex-direction:row-reverse;justify-content:flex-start;flex-wrap:wrap}
@@ -290,6 +293,7 @@ dialog.np menu{flex-wrap:wrap}
   .card{padding:8px 8px 10px}
   .pic{height:118px}
   .tag .num{font-size:1.45rem}
+  .tag .cu{font-size:.56rem;margin:0 0 4px 3px}
   .nombre{font-size:.82rem}
   .tiles{grid-template-columns:repeat(2,1fr)}
   .desk{display:none!important}
@@ -327,6 +331,7 @@ dialog.np menu{flex-wrap:wrap}
   .nombre{font-size:.72rem;margin:6px 0 5px;min-height:3.5em}
   .tag .num{font-size:1.35rem}
   .tag .cur{font-size:.7rem}
+  .tag .cu{font-size:.5rem;margin:0 0 3px 3px}
   .antes{font-size:.65rem}
   .ribbon{top:38px;font-size:.62rem}
   .badge-oferta{font-size:.6rem}

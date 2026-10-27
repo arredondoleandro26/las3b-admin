@@ -156,7 +156,7 @@ function Panel() {
         {modoVista && (
           <section className="hero wrap">
             {ajustes?.bannerUrl && <img className="banner" src={ajustes.bannerUrl} alt={ajustes.nombre} />}
-            <h1>{ajustes?.titulo ?? "Catálogo de precios"}</h1>
+            <h1>{ajustes?.titulo ?? "Catálogo de productos"}</h1>
             <div className="pills">
               {ajustes?.periodo && <span className="pill y">📅 Actualizado a la fecha: {ajustes.periodo}</span>}
               {ajustes?.precioNota && <span className="pill b">{ajustes.precioNota}</span>}

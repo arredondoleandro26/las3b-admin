@@ -12,7 +12,7 @@ type Props = { open: boolean; onClose: () => void; ajustes: Doc<"ajustes"> | nul
 
 const CAMPOS = [
   ["nombre", "Nombre del negocio", "Ej: Jabonería Las 3B"],
-  ["titulo", "Título", "Ej: Catálogo de precios"],
+  ["titulo", "Título", "Ej: Catálogo de productos"],
   ["periodo", "Actualizado a", "Ej: Octubre 2026"],
   ["precioNota", "Nota de precios", "Ej: Precio detalle · IVA incluido"],
 ] as const;
@@ -42,7 +42,7 @@ function Formulario({ onClose, ajustes }: Omit<Props, "open">) {
     try {
       await actualizar({
         nombre: g("nombre") || "Mi negocio",
-        titulo: g("titulo") || "Catálogo de precios",
+        titulo: g("titulo") || "Catálogo de productos",
         periodo: g("periodo"),
         precioNota: g("precioNota"),
         aviso: g("aviso"),

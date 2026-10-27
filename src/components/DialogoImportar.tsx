@@ -136,7 +136,7 @@ function Importador({ onClose, hayDatos }: Omit<Props, "open">) {
       const m = datos.meta ?? {};
       await impAjustes({
         nombre: m.nombre ?? "Mi negocio",
-        titulo: m.titulo ?? "Catálogo de precios",
+        titulo: m.titulo ?? "Catálogo de productos",
         periodo: m.periodo ?? "",
         precioNota: m.precioNota ?? "",
         aviso: m.aviso ?? "",

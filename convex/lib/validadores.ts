@@ -24,7 +24,7 @@ export const ajustesCampos = {
 
 export const AJUSTES_POR_DEFECTO = {
   nombre: "Mi negocio",
-  titulo: "Catálogo de precios",
+  titulo: "Catálogo de productos",
   periodo: "",
   precioNota: "Precio detalle · IVA incluido",
   aviso: "",

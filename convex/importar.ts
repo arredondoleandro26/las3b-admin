@@ -254,7 +254,7 @@ export const desdeArchivo = internalAction({
     const m = d.meta ?? {};
     await ctx.runMutation(internal.importar.ajustesInterno, {
       nombre: m.nombre ?? "Mi negocio",
-      titulo: m.titulo ?? "Catálogo de precios",
+      titulo: m.titulo ?? "Catálogo de productos",
       periodo: m.periodo ?? "",
       precioNota: m.precioNota ?? "",
       aviso: m.aviso ?? "",

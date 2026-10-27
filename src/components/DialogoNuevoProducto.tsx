@@ -136,7 +136,7 @@ function Formulario({ onClose, categorias, catInicial, fondo, setFondo }: Omit<P
           <input ref={nombreRef} value={nombre} onChange={(e) => setNombre(e.target.value)} required maxLength={160} autoComplete="off" placeholder="Ej: Esponja lisa" />
         </label>
         <label>Precio ($)
-          <input type="number" min={0} step={10} inputMode="numeric" required placeholder="Ej: 1500" value={precio} onChange={(e) => setPrecio(e.target.value)} />
+          <input type="number" min={0} step={1} inputMode="numeric" required placeholder="Ej: 1500" value={precio} onChange={(e) => setPrecio(e.target.value)} />
         </label>
         <div>
           <div className="lbl">Imagen del producto</div>

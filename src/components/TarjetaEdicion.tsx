@@ -135,9 +135,10 @@ export function TarjetaEdicion({ p, categorias, seleccionado, onSeleccion, fondo
       />
       <div className="row2">
         <label className="money">$
-          <input type="number" min={0} step={10} inputMode="numeric" aria-label="Precio" value={precio}
+          <input type="number" min={0} step={1} inputMode="numeric" aria-label="Precio" value={precio}
             onChange={(e) => setPrecio(e.target.value)} onBlur={guardarPrecio}
             onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
+          <span className="cu">c/u</span>
         </label>
       </div>
       <select aria-label="Estado" value={p.estado} onChange={(e) => void guardar({ estado: e.target.value as Estado })}>
@@ -155,7 +156,7 @@ export function TarjetaEdicion({ p, categorias, seleccionado, onSeleccion, fondo
         </label>
         {p.oferta && (
           <label className="money antes-l">antes $
-            <input type="number" min={0} step={10} inputMode="numeric" aria-label="Precio anterior" value={antes}
+            <input type="number" min={0} step={1} inputMode="numeric" aria-label="Precio anterior" value={antes}
               onChange={(e) => setAntes(e.target.value)} onBlur={guardarAntes}
               onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
           </label>
