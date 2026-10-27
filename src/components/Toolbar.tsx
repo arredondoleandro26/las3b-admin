@@ -9,6 +9,11 @@ type Props = {
   onImportar: () => void;
   onArchivados: () => void;
   nArchivados: number;
+  onDeshacer: () => void;
+  onRehacer: () => void;
+  puedeDeshacer: boolean;
+  puedeRehacer: boolean;
+  pasos: number;
   modoVista: boolean;
 };
 
@@ -17,6 +22,8 @@ export function Toolbar(p: Props) {
     <div className="toolbar" role="toolbar" aria-label="Herramientas de edición">
       {!p.modoVista && (
         <>
+          <button type="button" disabled={!p.puedeDeshacer} onClick={p.onDeshacer} title={`Deshacer el último cambio (Ctrl+Z)${p.pasos ? ` · pasos disponibles: ${p.pasos}` : ""}`}>↶ Deshacer</button>
+          <button type="button" disabled={!p.puedeRehacer} onClick={p.onRehacer} title="Rehacer lo que deshiciste (Ctrl+Y)">↷ Rehacer</button>
           <button type="button" className="addp" onClick={p.onNuevoProducto}>＋ Nuevo producto</button>
           <button type="button" className="addp" onClick={p.onNuevaCategoria}>＋ Nueva categoría</button>
           <button type="button" onClick={p.onToggleFondo} title="Quitar el fondo de las fotos que subas, dejando solo el producto">🪄 Quitar fondo: {p.fondoOn ? "Sí" : "No"}</button>

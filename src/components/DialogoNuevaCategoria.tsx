@@ -5,6 +5,7 @@ import type { Doc, Id } from "../../convex/_generated/dataModel";
 import { Modal } from "./Modal";
 import { mensaje } from "./TarjetaEdicion";
 import { useToast } from "../hooks/useToast";
+import { useHistorial } from "../hooks/useHistorial";
 
 export const EMOJIS = ["🧽", "🪣", "🧺", "🧴", "🧼", "🧻", "🧹", "🌸", "🧑‍🍳", "🩹", "🧷", "👶", "👵", "🥽", "🍽️", "🏭", "🧪", "🐜", "🚗", "🛍️", "🎁", "🧸", "🐶", "🪴", "🔧", "💡", "🧃", "🍬"];
 
@@ -26,7 +27,10 @@ export function DialogoNuevaCategoria({ open, onClose, categorias, onCrearYAgreg
 
 function Formulario({ onClose, categorias, onCrearYAgregar }: Omit<Props, "open">) {
   const toast = useToast();
+  const h = useHistorial();
   const crear = useMutation(api.categorias.crear);
+  const eliminar = useMutation(api.categorias.eliminar);
+  const restaurar = useMutation(api.categorias.restaurar);
   const [nombre, setNombre] = useState("");
   const [icono, setIcono] = useState("🛍️");
   const [pos, setPos] = useState<string>("fin");
@@ -42,6 +46,12 @@ function Formulario({ onClose, categorias, onCrearYAgregar }: Omit<Props, "open"
     setOcupado(true);
     try {
       const id = await crear({ nombre: n, icono: icono.trim() || "🛍️", posicion: pos === "fin" ? undefined : parseInt(pos, 10) });
+      h.registrar({
+        etiqueta: `categoría “${n}” creada`,
+        rehacer: () => restaurar({ id, productos: [] }),
+        deshacer: () => eliminar({ id }),
+        refs: { categorias: [id] },
+      });
       toast(`✅ Categoría “${n}” creada`);
       onClose();
       if (conProducto) onCrearYAgregar(id);

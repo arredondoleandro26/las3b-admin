@@ -8,6 +8,7 @@ import type { OpcionesFondo } from "../lib/imagen";
 import { TarjetaEdicion, mensaje } from "./TarjetaEdicion";
 import { TarjetaVista } from "./TarjetaVista";
 import { useToast } from "../hooks/useToast";
+import { useHistorial } from "../hooks/useHistorial";
 
 type Props = {
   cat: Doc<"categorias">;
@@ -27,6 +28,7 @@ type Props = {
 export function SeccionCategoria(props: Props) {
   const { cat, productos, categorias, sel, onSeleccion, onSeleccionarCat, onAgregarProducto, filtrando, modoVista, fondo, esPrimera, esUltima } = props;
   const toast = useToast();
+  const h = useHistorial();
   const actualizarCat = useMutation(api.categorias.actualizar);
   const desplazar = useMutation(api.categorias.desplazar);
   const eliminarCat = useMutation(api.categorias.eliminar);
@@ -64,8 +66,14 @@ export function SeccionCategoria(props: Props) {
     } else {
       nuevo = arrayMove(ids, ids.indexOf(a), ids.indexOf(o));
     }
+    const previo = ids, catId = cat._id;
     setIds(nuevo);
-    void reordenar({ catId: cat._id, ids: nuevo }).catch((er) => toast(mensaje(er)));
+    void h.ejecutar({
+      etiqueta: "cambio de orden",
+      rehacer: () => reordenar({ catId, ids: nuevo }),
+      deshacer: () => reordenar({ catId, ids: previo }),
+      refs: { categorias: [catId] },
+    }).catch((er) => toast(mensaje(er)));
   }
 
   async function borrarCategoria() {
@@ -75,12 +83,39 @@ export function SeccionCategoria(props: Props) {
         (n ? "\n\nSus productos se moverán a «Archivados» y podrás restaurarlos." : ""),
     );
     if (!ok) return;
+    const id = cat._id;
     try {
-      const archivados = await eliminarCat({ id: cat._id });
+      let archivados = await eliminarCat({ id });
       const k = archivados.length;
-      toast(`🗑 Categoría “${cat.nombre}” eliminada${k ? `; sus ${k} producto${k === 1 ? "" : "s"} están en Archivados` : ""}`, 9000,
-        { label: "↶ Deshacer", fn: () => void restaurarCat({ id: cat._id, productos: archivados }).catch((e) => toast(mensaje(e))) });
+      h.registrar({
+        etiqueta: `categoría “${cat.nombre}” eliminada`,
+        rehacer: async () => { archivados = await eliminarCat({ id }); },
+        deshacer: () => restaurarCat({ id, productos: archivados }),
+        refs: { categorias: [id], productos: archivados },
+      });
+      h.avisoDeshacer(`🗑 Categoría “${cat.nombre}” eliminada${k ? `; sus ${k} producto${k === 1 ? "" : "s"} están en Archivados` : ""}`);
     } catch (e) { toast(mensaje(e)); }
+  }
+
+  function cambiarCat(cambios: { nombre?: string; icono?: string }) {
+    const id = cat._id;
+    const previo = { nombre: cambios.nombre !== undefined ? cat.nombre : undefined, icono: cambios.icono !== undefined ? cat.icono : undefined };
+    void h.ejecutar({
+      etiqueta: cambios.nombre !== undefined ? "nombre de categoría" : "icono de categoría",
+      rehacer: () => actualizarCat({ id, ...cambios }),
+      deshacer: () => actualizarCat({ id, ...previo }),
+      refs: { categorias: [id] },
+    }).catch((er) => toast(mensaje(er)));
+  }
+
+  function moverCat(direccion: -1 | 1) {
+    const id = cat._id;
+    void h.ejecutar({
+      etiqueta: "orden de categorías",
+      rehacer: () => desplazar({ id, direccion }),
+      deshacer: () => desplazar({ id, direccion: direccion === 1 ? -1 : 1 }),
+      refs: { categorias: [id] },
+    }).catch((er) => toast(mensaje(er)));
   }
 
   if (!productos.length && filtrando) return null;
@@ -110,15 +145,15 @@ export function SeccionCategoria(props: Props) {
       <div className="cat-head edit">
         <input className="cat-icon edit-icon" aria-label="Icono" maxLength={4} value={icono}
           onChange={(e) => setIcono(e.target.value)}
-          onBlur={() => { const v = icono.trim(); if (v && v !== cat.icono) void actualizarCat({ id: cat._id, icono: v }).catch((er) => toast(mensaje(er))); else setIcono(cat.icono); }} />
+          onBlur={() => { const v = icono.trim(); if (v && v !== cat.icono) cambiarCat({ icono: v }); else setIcono(cat.icono); }} />
         <input className="cat-name" aria-label="Nombre de la categoría" value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          onBlur={() => { const v = nombre.trim(); if (v && v !== cat.nombre) void actualizarCat({ id: cat._id, nombre: v }).catch((er) => toast(mensaje(er))); else setNombre(cat.nombre); }}
+          onBlur={() => { const v = nombre.trim(); if (v && v !== cat.nombre) cambiarCat({ nombre: v }); else setNombre(cat.nombre); }}
           onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
         <span className="cat-actions">
           <button type="button" title="Seleccionar / quitar todos los productos de esta categoría" onClick={() => onSeleccionarCat(productos.map((p) => p._id))}>☑</button>
-          <button type="button" title="Subir categoría" disabled={esPrimera} onClick={() => void desplazar({ id: cat._id, direccion: -1 })}>↑</button>
-          <button type="button" title="Bajar categoría" disabled={esUltima} onClick={() => void desplazar({ id: cat._id, direccion: 1 })}>↓</button>
+          <button type="button" title="Subir categoría" disabled={esPrimera} onClick={() => moverCat(-1)}>↑</button>
+          <button type="button" title="Bajar categoría" disabled={esUltima} onClick={() => moverCat(1)}>↓</button>
           <button type="button" title="Eliminar categoría" onClick={() => void borrarCategoria()}>🗑</button>
         </span>
       </div>

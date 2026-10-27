@@ -1,12 +1,13 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import type { Doc } from "../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../convex/_generated/dataModel";
 import { procesarBanner } from "../lib/imagen";
 import { useSubirArchivo } from "../lib/subir";
 import { Modal } from "./Modal";
 import { mensaje } from "./TarjetaEdicion";
 import { useToast } from "../hooks/useToast";
+import { useHistorial } from "../hooks/useHistorial";
 
 type Props = { open: boolean; onClose: () => void; ajustes: Doc<"ajustes"> | null };
 
@@ -27,6 +28,7 @@ export function DialogoAjustes({ open, onClose, ajustes }: Props) {
 
 function Formulario({ onClose, ajustes }: Omit<Props, "open">) {
   const toast = useToast();
+  const h = useHistorial();
   const actualizar = useMutation(api.ajustes.actualizar);
   const cambiarBanner = useMutation(api.ajustes.cambiarBanner);
   const subir = useSubirArchivo();
@@ -40,7 +42,7 @@ function Formulario({ onClose, ajustes }: Omit<Props, "open">) {
     const g = (k: string) => String(fd.get(k) ?? "").trim();
     setOcupado(true);
     try {
-      await actualizar({
+      const nuevos = {
         nombre: g("nombre") || "Mi negocio",
         titulo: g("titulo") || "Catálogo de productos",
         periodo: g("periodo"),
@@ -49,11 +51,27 @@ function Formulario({ onClose, ajustes }: Omit<Props, "open">) {
         whatsapp: g("whatsapp"),
         pie: g("pie"),
         color: g("color") || "#0b7f80",
-      });
+      };
+      const previos = {
+        nombre: ajustes?.nombre ?? "Mi negocio",
+        titulo: ajustes?.titulo ?? "Catálogo de productos",
+        periodo: ajustes?.periodo ?? "",
+        precioNota: ajustes?.precioNota ?? "",
+        aviso: ajustes?.aviso ?? "",
+        whatsapp: ajustes?.whatsapp ?? "",
+        pie: ajustes?.pie ?? "",
+        color: ajustes?.color ?? "#0b7f80",
+      };
+      await h.ejecutar({ etiqueta: "cambio de ajustes", rehacer: () => actualizar(nuevos), deshacer: () => actualizar(previos) });
       toast("✅ Ajustes guardados");
       onClose();
     } catch (er) { toast(mensaje(er)); }
     finally { setOcupado(false); }
+  }
+
+  async function banner(storageId: Id<"_storage"> | null, etiqueta: string) {
+    const previo = ajustes?.bannerId ?? null;
+    await h.ejecutar({ etiqueta, rehacer: () => cambiarBanner({ storageId }), deshacer: () => cambiarBanner({ storageId: previo }) });
   }
 
   async function nuevoBanner(file: File) {
@@ -61,7 +79,7 @@ function Formulario({ onClose, ajustes }: Omit<Props, "open">) {
     try {
       const blob = await procesarBanner(file);
       const storageId = await subir(blob);
-      await cambiarBanner({ storageId });
+      await banner(storageId, "banner cambiado");
       toast("✅ Banner actualizado");
     } catch (er) { toast(mensaje(er)); }
     finally { setSubiendoBanner(false); }
@@ -87,7 +105,7 @@ function Formulario({ onClose, ajustes }: Omit<Props, "open">) {
             {subiendoBanner ? "Subiendo…" : "🖼️ Cambiar banner"}
           </button>
           {ajustes?.bannerUrl && (
-            <button type="button" className="btn ghost" onClick={() => { if (confirm("¿Quitar el banner de portada?")) void cambiarBanner({ storageId: null }).catch((er) => toast(mensaje(er))); }}>Quitar banner</button>
+            <button type="button" className="btn ghost" onClick={() => { if (confirm("¿Quitar el banner de portada?")) void banner(null, "banner quitado").catch((er) => toast(mensaje(er))); }}>Quitar banner</button>
           )}
         </div>
         <input ref={picker} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void nuevoBanner(f); }} />

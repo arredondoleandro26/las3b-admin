@@ -13,6 +13,7 @@ import type * as archivos from "../archivos.js";
 import type * as auth from "../auth.js";
 import type * as catalogo from "../catalogo.js";
 import type * as categorias from "../categorias.js";
+import type * as crons from "../crons.js";
 import type * as http from "../http.js";
 import type * as importar from "../importar.js";
 import type * as lib_acceso from "../lib/acceso.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   catalogo: typeof catalogo;
   categorias: typeof categorias;
+  crons: typeof crons;
   http: typeof http;
   importar: typeof importar;
   "lib/acceso": typeof lib_acceso;

@@ -8,6 +8,7 @@ import { Modal } from "./Modal";
 import { TarjetaVista } from "./TarjetaVista";
 import { mensaje } from "./TarjetaEdicion";
 import { useToast } from "../hooks/useToast";
+import { useHistorial } from "../hooks/useHistorial";
 
 type Pendiente = { key: string; src: ImageBitmap; blob: Blob; url: string; removed: boolean | null };
 
@@ -30,7 +31,10 @@ export function DialogoNuevoProducto({ open, onClose, categorias, catInicial, fo
 
 function Formulario({ onClose, categorias, catInicial, fondo, setFondo }: Omit<Props, "open">) {
   const toast = useToast();
+  const h = useHistorial();
   const crear = useMutation(api.productos.crear);
+  const archivar = useMutation(api.productos.archivar);
+  const restaurar = useMutation(api.productos.restaurar);
   const subir = useSubirArchivo();
   const [cat, setCat] = useState<Id<"categorias"> | "">(catInicial ?? categorias[0]?._id ?? "");
   const [nombre, setNombre] = useState("");
@@ -107,7 +111,9 @@ function Formulario({ onClose, categorias, catInicial, fondo, setFondo }: Omit<P
     try {
       const ids: Id<"_storage">[] = [];
       for (const p of pend) ids.push(await subir(p.blob));
-      await crear({ catId: c._id, nombre: n, precio: pr, imagenes: ids });
+      const id = await crear({ catId: c._id, nombre: n, precio: pr, imagenes: ids });
+      // deshacer lo manda a Archivados (no se pierde) y rehacer lo trae de vuelta
+      h.registrar({ etiqueta: `«${n}» agregado`, rehacer: () => restaurar({ ids: [id] }), deshacer: () => archivar({ ids: [id] }), refs: { productos: [id] } });
       pend.forEach((p) => { p.src.close(); URL.revokeObjectURL(p.url); });
       setPend([]);
       if (otro) {

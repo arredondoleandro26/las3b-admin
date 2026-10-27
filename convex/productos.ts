@@ -147,7 +147,10 @@ export const eliminarDefinitivo = mutation({
   },
 });
 
-/** Mueve uno o varios productos a otra categoría, al final de ella y manteniendo su orden relativo. */
+/**
+ * Mueve uno o varios productos a otra categoría, al final de ella y manteniendo su orden relativo.
+ * Devuelve cómo estaban ordenadas las categorías de origen, para poder deshacerlo.
+ */
 export const moverCategoria = mutation({
   args: { ids: v.array(v.id("productos")), catId: v.id("categorias") },
   handler: async (ctx, { ids, catId }) => {
@@ -160,16 +163,21 @@ export const moverCategoria = mutation({
       if (p && !p.archivado) docs.push(p);
     }
     docs.sort((a, b) => a.orden - b.orden);
-    let movidos = 0;
-    const origenes = new Set<Id<"categorias">>();
+    const origenes = new Map<Id<"categorias">, { catId: Id<"categorias">; ids: Id<"productos">[]; movidos: Id<"productos">[] }>();
     for (const p of docs) {
       if (p.catId === catId) continue;
-      origenes.add(p.catId);
-      await ctx.db.patch(p._id, { catId, orden: orden++ });
-      movidos++;
+      if (!origenes.has(p.catId)) {
+        const antes = (await activosDeCategoria(ctx, p.catId)).map((q) => q._id);
+        origenes.set(p.catId, { catId: p.catId, ids: antes, movidos: [] });
+      }
+      origenes.get(p.catId)!.movidos.push(p._id);
     }
-    for (const c of origenes) await renumerar(ctx, await activosDeCategoria(ctx, c));
-    return movidos;
+    for (const o of origenes.values()) {
+      for (const id of o.movidos) await ctx.db.patch(id, { catId, orden: orden++ });
+      await renumerar(ctx, await activosDeCategoria(ctx, o.catId));
+    }
+    const lista = [...origenes.values()];
+    return { movidos: lista.reduce((n, o) => n + o.movidos.length, 0), origenes: lista };
   },
 });
 
@@ -189,42 +197,19 @@ export const reordenar = mutation({
   },
 });
 
-export const agregarImagen = mutation({
-  args: { id: v.id("productos"), storageId: v.id("_storage") },
-  handler: async (ctx, { id, storageId }) => {
+/**
+ * Deja la lista de imágenes del producto tal cual se indica (agregar, reemplazar, quitar, deshacer).
+ * No borra los archivos que salen de la lista: así se pueden recuperar con «Deshacer». Los que
+ * nadie usa los borra el cron `limpiarHuerfanos` (convex/archivos.ts) después de un día.
+ */
+export const fijarImagenes = mutation({
+  args: { id: v.id("productos"), storageIds: v.array(v.id("_storage")) },
+  handler: async (ctx, { id, storageIds }) => {
     await requerirAdmin(ctx);
     const p = await ctx.db.get(id);
-    if (!p) throw new ConvexError("El producto ya no existe.");
-    await ctx.db.patch(id, { imagenes: [...p.imagenes, await urlDe(ctx, storageId)] });
-  },
-});
-
-export const reemplazarImagen = mutation({
-  args: { id: v.id("productos"), indice: v.number(), storageId: v.id("_storage") },
-  handler: async (ctx, { id, indice, storageId }) => {
-    await requerirAdmin(ctx);
-    const p = await ctx.db.get(id);
-    if (!p) throw new ConvexError("El producto ya no existe.");
-    const imgs = [...p.imagenes];
-    const nueva = await urlDe(ctx, storageId);
-    if (indice < 0 || indice >= imgs.length) imgs.push(nueva);
-    else {
-      await ctx.storage.delete(imgs[indice].storageId).catch(() => {});
-      imgs[indice] = nueva;
-    }
-    await ctx.db.patch(id, { imagenes: imgs });
-  },
-});
-
-export const quitarImagen = mutation({
-  args: { id: v.id("productos"), indice: v.number() },
-  handler: async (ctx, { id, indice }) => {
-    await requerirAdmin(ctx);
-    const p = await ctx.db.get(id);
-    if (!p) throw new ConvexError("El producto ya no existe.");
-    const imgs = [...p.imagenes];
-    const [quitada] = imgs.splice(indice, 1);
-    if (quitada) await ctx.storage.delete(quitada.storageId).catch(() => {});
+    if (!p || p.archivado) throw new ConvexError("El producto ya no existe.");
+    const imgs = [];
+    for (const s of storageIds) imgs.push(p.imagenes.find((i) => i.storageId === s) ?? (await urlDe(ctx, s)));
     await ctx.db.patch(id, { imagenes: imgs });
   },
 });

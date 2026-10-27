@@ -157,6 +157,7 @@ body.editing .qty,body.editing .cartbtn{display:none}
 .toolbar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:40;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;background:#16323b;padding:8px;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35);max-width:calc(100% - 20px)}
 .toolbar button{border:0;border-radius:12px;padding:9px 14px;background:rgba(255,255,255,.12);color:#fff;font-weight:700;font-size:.85rem;white-space:nowrap}
 .toolbar button:hover{background:rgba(255,255,255,.22)}
+.toolbar button:disabled{opacity:.4;cursor:default;background:rgba(255,255,255,.12)}
 .toolbar button.primary{background:var(--yellow);color:#1b1b1b}
 .toolbar button.primary:hover{background:#ffe27a}
 .toolbar .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--red);margin-left:6px}

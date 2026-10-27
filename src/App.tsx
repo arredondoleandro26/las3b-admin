@@ -14,6 +14,7 @@ import { DialogoImportar } from "./components/DialogoImportar";
 import { DialogoArchivados } from "./components/DialogoArchivados";
 import { useFondo } from "./hooks/useFondo";
 import { useToast } from "./hooks/useToast";
+import { HistorialProvider, useHistorial } from "./hooks/useHistorial";
 import { ESTADOS, descargar, norm } from "./lib/formato";
 
 export default function App() {
@@ -21,7 +22,7 @@ export default function App() {
     <>
       <AuthLoading><div className="cargando">Cargando…</div></AuthLoading>
       <Unauthenticated><Login /></Unauthenticated>
-      <Authenticated><Panel /></Authenticated>
+      <Authenticated><HistorialProvider><Panel /></HistorialProvider></Authenticated>
     </>
   );
 }
@@ -31,6 +32,7 @@ type Dialogo = { tipo: "producto"; catId: Id<"categorias"> | null } | { tipo: "c
 function Panel() {
   const { signOut } = useAuthActions();
   const toast = useToast();
+  const historial = useHistorial();
   const usuario = useQuery(api.usuario.actual);
   const datos = useQuery(api.productos.listarTodo, usuario?.esAdmin ? {} : "skip");
   const archivados = useQuery(api.productos.listarArchivados, usuario?.esAdmin ? {} : "skip");
@@ -57,6 +59,20 @@ function Panel() {
     window.addEventListener("dragover", h); window.addEventListener("drop", h);
     return () => { window.removeEventListener("dragover", h); window.removeEventListener("drop", h); };
   }, []);
+
+  // Ctrl+Z / Ctrl+Y (y Ctrl+Shift+Z). Dentro de un campo de texto queda el deshacer propio del navegador.
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || modoVista) return;
+      const t = e.target as HTMLElement;
+      if (t.closest("input, textarea, select, [contenteditable=true]") || document.querySelector("dialog[open]")) return;
+      const k = e.key.toLowerCase();
+      if (k === "z" && !e.shiftKey) { e.preventDefault(); void historial.deshacer().then((ok) => { if (!ok) toast("No hay nada más que deshacer."); }); }
+      else if (k === "y" || (k === "z" && e.shiftKey)) { e.preventDefault(); void historial.rehacer().then((ok) => { if (!ok) toast("No hay nada que rehacer."); }); }
+    };
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
+  }, [historial, modoVista, toast]);
 
   const palabras = useMemo(() => norm(busqueda).split(/\s+/).filter(Boolean), [busqueda]);
   const filtrando = palabras.length > 0;
@@ -226,6 +242,11 @@ function Panel() {
         onImportar={() => setDialogo({ tipo: "importar" })}
         onArchivados={() => setDialogo({ tipo: "archivados" })}
         nArchivados={archivados?.length ?? 0}
+        onDeshacer={() => void historial.deshacer()}
+        onRehacer={() => void historial.rehacer()}
+        puedeDeshacer={historial.puedeDeshacer}
+        puedeRehacer={historial.puedeRehacer}
+        pasos={historial.pasos}
       />
 
       <DialogoNuevoProducto
@@ -251,7 +272,7 @@ function Panel() {
         onMovidos={() => setSel(new Set())}
       />
       <DialogoAjustes open={dialogo?.tipo === "ajustes"} onClose={() => setDialogo(null)} ajustes={ajustes} />
-      <DialogoArchivados open={dialogo?.tipo === "archivados"} onClose={() => setDialogo(null)} categorias={categorias} onPurgado={() => {}} />
+      <DialogoArchivados open={dialogo?.tipo === "archivados"} onClose={() => setDialogo(null)} categorias={categorias} onPurgado={historial.purgar} />
       <DialogoImportar open={dialogo?.tipo === "importar"} onClose={() => setDialogo(null)} hayDatos={hayDatos} />
     </>
   );

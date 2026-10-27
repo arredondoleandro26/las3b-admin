@@ -30,14 +30,12 @@ export const actualizar = mutation({
   },
 });
 
+/** El banner anterior no se borra (se puede deshacer); lo limpia el cron `limpiarHuerfanos`. */
 export const cambiarBanner = mutation({
   args: { storageId: v.union(v.id("_storage"), v.null()) },
   handler: async (ctx, { storageId }) => {
     await requerirAdmin(ctx);
     const a = await obtenerOCrearAjustes(ctx);
-    if (a.bannerId && a.bannerId !== storageId) {
-      await ctx.storage.delete(a.bannerId).catch(() => {});
-    }
     if (!storageId) {
       await ctx.db.patch(a._id, { bannerId: undefined, bannerUrl: undefined });
       return;

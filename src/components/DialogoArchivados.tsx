@@ -4,6 +4,7 @@ import { api } from "../../convex/_generated/api";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 import { ESTADOS, fechaCorta, fmt, norm } from "../lib/formato";
 import { Modal } from "./Modal";
+import { useHistorial } from "../hooks/useHistorial";
 import { mensaje } from "./TarjetaEdicion";
 
 type Props = {
@@ -26,7 +27,9 @@ const ORIGINAL = "__original";
 
 function Contenido({ onClose, categorias, onPurgado }: Omit<Props, "open">) {
   const archivados = useQuery(api.productos.listarArchivados);
+  const h = useHistorial();
   const restaurar = useMutation(api.productos.restaurar);
+  const archivar = useMutation(api.productos.archivar);
   const eliminarDefinitivo = useMutation(api.productos.eliminarDefinitivo);
   const [q, setQ] = useState("");
   const [destino, setDestino] = useState<Record<string, string>>({});
@@ -49,7 +52,8 @@ function Contenido({ onClose, categorias, onPurgado }: Omit<Props, "open">) {
     const d = destino[a._id] ?? (a.catEstado === "no-existe" ? "" : ORIGINAL);
     if (!d) return setMsg({ t: "Elige primero la categoría donde quieres restaurarlo." });
     void correr(async () => {
-      await restaurar(d === ORIGINAL ? { ids: [a._id] } : { ids: [a._id], catId: d as Id<"categorias"> });
+      const args = d === ORIGINAL ? { ids: [a._id] } : { ids: [a._id], catId: d as Id<"categorias"> };
+      await h.ejecutar({ etiqueta: `«${a.nombre}» restaurado`, rehacer: () => restaurar(args), deshacer: () => archivar({ ids: [a._id] }), refs: { productos: [a._id] } });
       const cat = d === ORIGINAL ? a.catNombre : categorias.find((c) => c._id === d)?.nombre;
       setMsg({ t: `↩ «${a.nombre}» volvió a «${cat}».`, ok: true });
     });

@@ -8,6 +8,9 @@ import { ESTADOS, type Estado } from "../lib/formato";
 import { MENSAJE_FONDO_FALLO, procesarProducto, type OpcionesFondo } from "../lib/imagen";
 import { useSubirArchivo } from "../lib/subir";
 import { useToast } from "../hooks/useToast";
+import { useHistorial } from "../hooks/useHistorial";
+import { useAcciones } from "../hooks/useAcciones";
+import { mensaje } from "../lib/errores";
 
 type Props = {
   p: Doc<"productos">;
@@ -20,13 +23,10 @@ type Props = {
 
 export function TarjetaEdicion({ p, categorias, seleccionado, onSeleccion, fondo, arrastrable }: Props) {
   const toast = useToast();
+  const h = useHistorial();
+  const { moverProductos, eliminarProductos } = useAcciones();
   const actualizar = useMutation(api.productos.actualizar);
-  const archivar = useMutation(api.productos.archivar);
-  const restaurar = useMutation(api.productos.restaurar);
-  const mover = useMutation(api.productos.moverCategoria);
-  const agregarImagen = useMutation(api.productos.agregarImagen);
-  const reemplazarImagen = useMutation(api.productos.reemplazarImagen);
-  const quitarImagen = useMutation(api.productos.quitarImagen);
+  const fijarImagenes = useMutation(api.productos.fijarImagenes);
   const subir = useSubirArchivo();
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p._id, disabled: !arrastrable });
@@ -46,9 +46,24 @@ export function TarjetaEdicion({ p, categorias, seleccionado, onSeleccion, fondo
   useEffect(() => { setAntes(p.antes ? String(p.antes) : ""); }, [p.antes]);
 
   type Cambios = { nombre?: string; precio?: number; estado?: Estado; oferta?: boolean; antes?: number | null };
+  const ETIQUETAS: Record<keyof Cambios, string> = { nombre: "cambio de nombre", precio: "cambio de precio", estado: "cambio de estado", oferta: "cambio de oferta", antes: "cambio de precio anterior" };
+
   async function guardar(cambios: Cambios) {
+    const previo: Cambios = {};
+    for (const k of Object.keys(cambios) as (keyof Cambios)[]) {
+      if (k === "antes") previo.antes = p.antes ?? null;
+      else Object.assign(previo, { [k]: p[k] ?? false });
+    }
+    const id = p._id;
     setGuardando(true);
-    try { await actualizar({ id: p._id, ...cambios }); }
+    try {
+      await h.ejecutar({
+        etiqueta: ETIQUETAS[Object.keys(cambios)[0] as keyof Cambios],
+        rehacer: () => actualizar({ id, ...cambios }),
+        deshacer: () => actualizar({ id, ...previo }),
+        refs: { productos: [id] },
+      });
+    }
     catch (e) { toast(mensaje(e)); }
     finally { setGuardando(false); }
   }
@@ -57,23 +72,44 @@ export function TarjetaEdicion({ p, categorias, seleccionado, onSeleccion, fondo
   function guardarPrecio() { const v = Math.max(0, parseInt(precio, 10) || 0); setPrecio(String(v)); if (v !== p.precio) void guardar({ precio: v }); }
   function guardarAntes() { const v = Math.max(0, parseInt(antes, 10) || 0); setAntes(v ? String(v) : ""); if ((v || null) !== (p.antes ?? null)) void guardar({ antes: v || null }); }
 
+  /** Cambia la lista de imágenes como un solo paso del historial. */
+  async function cambiarImagenes(siguiente: Id<"_storage">[], etiqueta: string) {
+    const id = p._id, previa = p.imagenes.map((i) => i.storageId);
+    await h.ejecutar({
+      etiqueta,
+      rehacer: () => fijarImagenes({ id, storageIds: siguiente }),
+      deshacer: () => fijarImagenes({ id, storageIds: previa }),
+      refs: { productos: [id] },
+    });
+  }
+
   async function procesarArchivos(files: FileList | File[]) {
     const imgs = [...files].filter((f) => f.type.startsWith("image/"));
     if (!imgs.length) return toast("Ese archivo no es una imagen.");
     setSubiendo(true);
     try {
       let fallo = false;
+      const nuevas: Id<"_storage">[] = [];
       for (const f of imgs) {
         const r = await procesarProducto(f, fondo);
         if (r.removed === false) fallo = true;
-        const storageId = await subir(r.blob);
-        const m = modo.current;
-        if (m.tipo === "replace") { await reemplazarImagen({ id: p._id, indice: m.i, storageId }); modo.current = { tipo: "add" }; }
-        else await agregarImagen({ id: p._id, storageId });
+        nuevas.push(await subir(r.blob));
+      }
+      const actuales = p.imagenes.map((i) => i.storageId);
+      const m = modo.current;
+      modo.current = { tipo: "add" };
+      if (m.tipo === "replace" && m.i < actuales.length) {
+        await cambiarImagenes(actuales.map((s, k) => (k === m.i ? nuevas[0] : s)).concat(nuevas.slice(1)), "imagen reemplazada");
+      } else {
+        await cambiarImagenes([...actuales, ...nuevas], nuevas.length === 1 ? "imagen agregada" : "imágenes agregadas");
       }
       if (fallo) toast(MENSAJE_FONDO_FALLO, 6500);
     } catch (e) { toast(mensaje(e)); }
     finally { setSubiendo(false); }
+  }
+
+  function quitar(k: number) {
+    void cambiarImagenes(p.imagenes.filter((_, j) => j !== k).map((i) => i.storageId), "imagen quitada").catch((er) => toast(mensaje(er)));
   }
 
   function elegir(m: typeof modo.current) { modo.current = m; if (picker.current) { picker.current.value = ""; picker.current.click(); } }
@@ -84,10 +120,7 @@ export function TarjetaEdicion({ p, categorias, seleccionado, onSeleccion, fondo
     if (!confirm(`¿Eliminar «${p.nombre}»?
 
 Se moverá a «Archivados»: ahí podrás restaurarlo o eliminarlo para siempre.`)) return;
-    try {
-      await archivar({ ids: [p._id] });
-      toast(`🗑 «${p.nombre}» eliminado: quedó en Archivados`, 9000, { label: "↶ Deshacer", fn: () => void restaurar({ ids: [p._id] }).catch((e) => toast(mensaje(e))) });
-    } catch (e) { toast(mensaje(e)); }
+    try { await eliminarProductos([p._id], `🗑 «${p.nombre}» eliminado: quedó en Archivados`); } catch (e) { toast(mensaje(e)); }
   }
 
   const style = { transform: CSS.Transform.toString(transform), transition };
@@ -120,7 +153,7 @@ Se moverá a «Archivados»: ahí podrás restaurarlo o eliminarlo para siempre.
               className="x"
               role="button"
               title="Quitar imagen"
-              onClick={(e) => { e.stopPropagation(); void quitarImagen({ id: p._id, indice: k }).catch((er) => toast(mensaje(er))); }}
+              onClick={(e) => { e.stopPropagation(); quitar(k); }}
             >✕</span>
           </button>
         ))}
@@ -152,7 +185,7 @@ Se moverá a «Archivados»: ahí podrás restaurarlo o eliminarlo para siempre.
       </select>
       <label className="fld">Categoría
         <select aria-label="Mover a otra categoría" value={p.catId}
-          onChange={(e) => void mover({ ids: [p._id], catId: e.target.value as Id<"categorias"> }).then(() => toast("✅ Producto movido de categoría")).catch((er) => toast(mensaje(er)))}>
+          onChange={(e) => void moverProductos([p._id], e.target.value as Id<"categorias">).then(() => toast("✅ Producto movido de categoría")).catch((er) => toast(mensaje(er)))}>
           {categorias.map((c) => <option key={c._id} value={c._id}>{c.icono} {c.nombre}</option>)}
         </select>
       </label>
@@ -173,8 +206,4 @@ Se moverá a «Archivados»: ahí podrás restaurarlo o eliminarlo para siempre.
   );
 }
 
-export function mensaje(e: unknown): string {
-  if (e && typeof e === "object" && "data" in e && typeof (e as { data: unknown }).data === "string") return (e as { data: string }).data;
-  if (e instanceof Error) return e.message;
-  return "Ocurrió un error inesperado.";
-}
+export { mensaje };

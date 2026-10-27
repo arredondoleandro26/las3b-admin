@@ -5,6 +5,7 @@ import type { Doc, Id } from "../../convex/_generated/dataModel";
 import { Modal } from "./Modal";
 import { mensaje } from "./TarjetaEdicion";
 import { useToast } from "../hooks/useToast";
+import { useAcciones } from "../hooks/useAcciones";
 
 type Props = {
   open: boolean;
@@ -25,7 +26,7 @@ export function DialogoMover({ open, onClose, categorias, productos, ids, onMovi
 
 function Formulario({ onClose, categorias, productos, ids, onMovidos }: Omit<Props, "open">) {
   const toast = useToast();
-  const mover = useMutation(api.productos.moverCategoria);
+  const { moverProductos } = useAcciones();
   const crearCat = useMutation(api.categorias.crear);
   const [destino, setDestino] = useState<string>(categorias[0]?._id ?? "nueva");
   const [nuevoNombre, setNuevoNombre] = useState("");
@@ -43,13 +44,14 @@ function Formulario({ onClose, categorias, productos, ids, onMovidos }: Omit<Pro
     e.preventDefault();
     setOcupado(true);
     try {
-      let catId: Id<"categorias">;
+      let catId: Id<"categorias">, nueva = false;
       if (destino === "nueva") {
         const n = nuevoNombre.trim().toUpperCase();
         if (!n) { setOcupado(false); return setMsg("Escribe el nombre de la categoría nueva."); }
         catId = await crearCat({ nombre: n, icono: nuevoIcono.trim() || "🛍️" });
+        nueva = true;
       } else catId = destino as Id<"categorias">;
-      const n = await mover({ ids, catId });
+      const n = await moverProductos(ids, catId, nueva);
       const c = categorias.find((x) => x._id === catId);
       toast(n ? `✅ ${n} producto${n === 1 ? "" : "s"} movido${n === 1 ? "" : "s"} a ${c?.nombre ?? nuevoNombre.toUpperCase()}` : "Los productos ya estaban en esa categoría.");
       onMovidos();

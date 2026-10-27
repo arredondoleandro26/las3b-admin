@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useMutation } from "convex/react";
+import { useHistorial } from "../hooks/useHistorial";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { dataUriABlob } from "../lib/imagen";
@@ -43,6 +44,7 @@ function extraerJSON(texto: string): CatalogoAntiguo {
 
 function Importador({ onClose, hayDatos }: Omit<Props, "open">) {
   const subir = useSubirArchivo();
+  const h = useHistorial();
   const vaciar = useMutation(api.importar.vaciar);
   const impCategorias = useMutation(api.importar.categorias);
   const impProductos = useMutation(api.importar.productos);
@@ -80,6 +82,7 @@ function Importador({ onClose, hayDatos }: Omit<Props, "open">) {
     if (!datos) return;
     if (reemplazar && !confirm("Se borrarán TODAS las categorías, productos e imágenes actuales antes de importar. ¿Continuar?")) return;
     setCorriendo(true); setError(""); setLog([]);
+    h.limpiar(); // una importación no se deshace paso a paso
     try {
       if (reemplazar) {
         const r = await vaciar();
