@@ -18,6 +18,15 @@ const CAMPOS = [
   ["precioNota", "Nota de precios", "Ej: Precio detalle · IVA incluido"],
 ] as const;
 
+/** Zona «Contáctanos» del catálogo. */
+const CAMPOS_CONTACTO = [
+  ["telefono", "Teléfono del local", "+56 9 1234 5678", "tel"],
+  ["correo", "Correo electrónico", "correo@ejemplo.cl", "email"],
+  ["instagram", "Instagram (@usuario o enlace)", "@mi_negocio", "text"],
+  ["facebook", "Facebook (nombre de la página o enlace; con el enlace se vuelve clicable)", "https://www.facebook.com/mi.pagina", "text"],
+  ["direccion", "Dirección", "Calle 123, Ciudad", "text"],
+] as const;
+
 export function DialogoAjustes({ open, onClose, ajustes }: Props) {
   return (
     <Modal open={open} onClose={onClose}>
@@ -51,6 +60,14 @@ function Formulario({ onClose, ajustes }: Omit<Props, "open">) {
         whatsapp: g("whatsapp"),
         pie: g("pie"),
         color: g("color") || "#0b7f80",
+        contacto: {
+          telefono: g("c_telefono"),
+          correo: g("c_correo"),
+          instagram: g("c_instagram"),
+          facebook: g("c_facebook"),
+          direccion: g("c_direccion"),
+          horario: g("c_horario").split("\n").map((l) => l.trim()).filter(Boolean).join("\n"),
+        },
       };
       const previos = {
         nombre: ajustes?.nombre ?? "Mi negocio",
@@ -61,6 +78,7 @@ function Formulario({ onClose, ajustes }: Omit<Props, "open">) {
         whatsapp: ajustes?.whatsapp ?? "",
         pie: ajustes?.pie ?? "",
         color: ajustes?.color ?? "#0b7f80",
+        contacto: ajustes?.contacto ?? { telefono: "", correo: "", instagram: "", facebook: "", direccion: "", horario: "" },
       };
       await h.ejecutar({ etiqueta: "cambio de ajustes", rehacer: () => actualizar(nuevos), deshacer: () => actualizar(previos) });
       toast("✅ Ajustes guardados");
@@ -96,6 +114,16 @@ function Formulario({ onClose, ajustes }: Omit<Props, "open">) {
         <input name="whatsapp" inputMode="numeric" defaultValue={ajustes?.whatsapp ?? ""} placeholder="56912345678" />
       </label>
       <label>Pie de página<textarea name="pie" rows={4} defaultValue={ajustes?.pie ?? ""} /></label>
+      <fieldset className="aj-grupo">
+        <legend>✉️ Zona de contacto del catálogo</legend>
+        <p className="aj-nota">Las solicitudes del formulario llegan a la pestaña <b>📨 Solicitudes</b> de este panel. Lo que dejes vacío no se muestra.</p>
+        {CAMPOS_CONTACTO.map(([k, label, ph, tipo]) => (
+          <label key={k}>{label}<input name={`c_${k}`} type={tipo} defaultValue={ajustes?.contacto?.[k] ?? ""} placeholder={ph} /></label>
+        ))}
+        <label>Horario de atención (una línea por horario)
+          <textarea name="c_horario" rows={3} defaultValue={ajustes?.contacto?.horario ?? ""} placeholder={"Lunes a viernes: 09:00 a 18:00 hrs\nSábado: 09:00 a 15:00 hrs"} />
+        </label>
+      </fieldset>
       <label>Color principal<input type="color" name="color" defaultValue={ajustes?.color ?? "#0b7f80"} /></label>
       <div>
         <div className="lbl">Banner de portada</div>

@@ -1,5 +1,5 @@
 import { query } from "./_generated/server";
-import { AJUSTES_POR_DEFECTO } from "./lib/validadores";
+import { AJUSTES_POR_DEFECTO, CONTACTO_VACIO } from "./lib/validadores";
 import { categoriasActivas } from "./lib/archivo";
 
 /**
@@ -24,6 +24,7 @@ export const obtener = query({
       pie: a?.pie ?? AJUSTES_POR_DEFECTO.pie,
       color: a?.color ?? AJUSTES_POR_DEFECTO.color,
       bannerUrl: a?.bannerUrl ?? null,
+      contacto: a?.contacto ?? CONTACTO_VACIO,
     };
 
     return {

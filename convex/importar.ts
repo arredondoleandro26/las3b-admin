@@ -6,6 +6,7 @@ import { internal } from "./_generated/api";
 import { requerirAdmin } from "./lib/acceso";
 import { ajustesCampos, estadoValidator } from "./lib/validadores";
 import { obtenerOCrearAjustes } from "./ajustes";
+import { contactoImportado, type CampoContacto } from "./lib/contacto";
 
 /**
  * Importación del catálogo HTML antiguo. Dos caminos:
@@ -93,12 +94,14 @@ async function productosImpl(ctx: MutationCtx, items: ProductoItem[]) {
 type AjustesArgs = {
   nombre: string; titulo: string; periodo: string; precioNota: string;
   aviso: string; whatsapp: string; pie: string; color: string;
+  contacto?: { telefono: string; correo: string; instagram: string; facebook: string; direccion: string; horario: string };
   bannerId?: Id<"_storage">;
 };
 
 async function ajustesImpl(ctx: MutationCtx, { bannerId, ...campos }: AjustesArgs) {
   const a = await obtenerOCrearAjustes(ctx);
   const patch: Record<string, unknown> = { ...campos, whatsapp: campos.whatsapp.replace(/\D/g, "") };
+  if (!campos.contacto) delete patch.contacto; // un catálogo antiguo sin zona de contacto no borra la actual
   if (bannerId) {
     if (a.bannerId && a.bannerId !== bannerId) await ctx.storage.delete(a.bannerId).catch(() => {});
     const url = await ctx.storage.getUrl(bannerId);
@@ -162,7 +165,7 @@ export const ajustesInterno = internalMutation({
 export const urlSubidaInterna = internalMutation({ args: {}, handler: (ctx) => ctx.storage.generateUploadUrl() });
 
 type CatalogoAntiguo = {
-  meta?: { nombre?: string; titulo?: string; periodo?: string; precioNota?: string; aviso?: string; whatsapp?: string; pie?: string; color?: string };
+  meta?: { nombre?: string; titulo?: string; periodo?: string; precioNota?: string; aviso?: string; whatsapp?: string; pie?: string; color?: string; contacto?: Partial<Record<CampoContacto, string>> };
   categorias: { id: string; nombre: string; icono: string }[];
   productos: { id: string; cat: string; nombre: string; precio: number; estado: string; imgs?: string[]; oferta?: boolean; antes?: number | null }[];
   imagenes: Record<string, string>;
@@ -261,6 +264,7 @@ export const desdeArchivo = internalAction({
       whatsapp: m.whatsapp ?? "",
       pie: m.pie ?? "",
       color: m.color ?? "#0b7f80",
+      contacto: contactoImportado(m.contacto),
       bannerId: mapaImg.get("banner"),
     });
 

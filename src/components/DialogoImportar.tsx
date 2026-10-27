@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useMutation } from "convex/react";
+import { contactoImportado, type CampoContacto } from "../../convex/lib/contacto";
 import { useHistorial } from "../hooks/useHistorial";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -12,7 +13,7 @@ import { mensaje } from "./TarjetaEdicion";
 /** Forma del JSON embebido en el catálogo HTML antiguo (<script id="catalog-data">). */
 type CatalogoAntiguo = {
   id?: string;
-  meta: { nombre?: string; titulo?: string; periodo?: string; precioNota?: string; aviso?: string; whatsapp?: string; pie?: string; color?: string };
+  meta: { nombre?: string; titulo?: string; periodo?: string; precioNota?: string; aviso?: string; whatsapp?: string; pie?: string; color?: string; contacto?: Partial<Record<CampoContacto, string>> };
   categorias: { id: string; nombre: string; icono: string }[];
   productos: { id: string; cat: string; nombre: string; precio: number; estado: string; imgs?: string[]; oferta?: boolean; antes?: number | null }[];
   imagenes: Record<string, string>;
@@ -146,6 +147,7 @@ function Importador({ onClose, hayDatos }: Omit<Props, "open">) {
         whatsapp: m.whatsapp ?? "",
         pie: m.pie ?? "",
         color: m.color ?? "#0b7f80",
+        contacto: contactoImportado(m.contacto),
         bannerId: mapaImg.get("banner"),
       });
       agregarLog("✅ Ajustes del negocio y banner aplicados.");

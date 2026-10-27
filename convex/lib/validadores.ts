@@ -19,6 +19,21 @@ export const archivadoValidator = v.object({
   ancla: v.union(v.id("productos"), v.null()),
 });
 
+/** Datos de la zona de contacto del catálogo (se editan en ⚙️ Ajustes). */
+export const contactoValidator = v.object({
+  telefono: v.string(),
+  correo: v.string(),
+  instagram: v.string(),
+  facebook: v.string(),
+  direccion: v.string(),
+  /** Una línea por horario. */
+  horario: v.string(),
+});
+
+export const CONTACTO_VACIO = { telefono: "", correo: "", instagram: "", facebook: "", direccion: "", horario: "" };
+
+export const estadoSolicitudValidator = v.union(v.literal("nueva"), v.literal("leida"), v.literal("respondida"));
+
 export const ajustesCampos = {
   nombre: v.string(),
   titulo: v.string(),
@@ -28,6 +43,7 @@ export const ajustesCampos = {
   whatsapp: v.string(),
   pie: v.string(),
   color: v.string(),
+  contacto: v.optional(contactoValidator),
 };
 
 export const AJUSTES_POR_DEFECTO = {

@@ -1,7 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
-import { archivadoValidator, estadoValidator, imagenValidator } from "./lib/validadores";
+import { archivadoValidator, contactoValidator, estadoSolicitudValidator, estadoValidator, imagenValidator } from "./lib/validadores";
 
 export default defineSchema({
   ...authTables,
@@ -18,7 +18,17 @@ export default defineSchema({
     color: v.string(),
     bannerId: v.optional(v.id("_storage")),
     bannerUrl: v.optional(v.string()),
+    contacto: v.optional(contactoValidator),
   }),
+
+  /** Mensajes del formulario «Contáctanos» del catálogo. Solo los lee el panel. */
+  solicitudes: defineTable({
+    nombre: v.string(),
+    telefono: v.string(),
+    correo: v.string(),
+    mensaje: v.string(),
+    estado: estadoSolicitudValidator,
+  }).index("por_estado", ["estado"]),
 
   categorias: defineTable({
     nombre: v.string(),

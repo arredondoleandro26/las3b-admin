@@ -117,9 +117,7 @@ export function TarjetaEdicion({ p, categorias, seleccionado, onSeleccion, fondo
   function onDrop(e: DragEvent) { e.preventDefault(); setDrag(false); modo.current = { tipo: "add" }; void procesarArchivos(e.dataTransfer.files); }
 
   async function borrar() {
-    if (!confirm(`¿Eliminar «${p.nombre}»?
-
-Se moverá a «Archivados»: ahí podrás restaurarlo o eliminarlo para siempre.`)) return;
+    if (!confirm(`¿Eliminar «${p.nombre}»?\n\nSe moverá a «Archivados»: ahí podrás restaurarlo o eliminarlo para siempre.`)) return;
     try { await eliminarProductos([p._id], `🗑 «${p.nombre}» eliminado: quedó en Archivados`); } catch (e) { toast(mensaje(e)); }
   }
 

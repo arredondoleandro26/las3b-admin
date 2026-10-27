@@ -12,6 +12,7 @@ import { DialogoMover } from "./components/DialogoMover";
 import { DialogoAjustes } from "./components/DialogoAjustes";
 import { DialogoImportar } from "./components/DialogoImportar";
 import { DialogoArchivados } from "./components/DialogoArchivados";
+import { PaginaSolicitudes } from "./components/PaginaSolicitudes";
 import { useFondo } from "./hooks/useFondo";
 import { useToast } from "./hooks/useToast";
 import { HistorialProvider, useHistorial } from "./hooks/useHistorial";
@@ -36,6 +37,8 @@ function Panel() {
   const usuario = useQuery(api.usuario.actual);
   const datos = useQuery(api.productos.listarTodo, usuario?.esAdmin ? {} : "skip");
   const archivados = useQuery(api.productos.listarArchivados, usuario?.esAdmin ? {} : "skip");
+  const nuevas = useQuery(api.solicitudes.contarNuevas, usuario?.esAdmin ? {} : "skip");
+  const [pestana, setPestana] = useState<"catalogo" | "solicitudes">("catalogo");
 
   const [busqueda, setBusqueda] = useState("");
   const [modoVista, setModoVista] = useState(false);
@@ -63,7 +66,7 @@ function Panel() {
   // Ctrl+Z / Ctrl+Y (y Ctrl+Shift+Z). Dentro de un campo de texto queda el deshacer propio del navegador.
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || e.altKey || modoVista) return;
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || modoVista || pestana !== "catalogo") return;
       const t = e.target as HTMLElement;
       if (t.closest("input, textarea, select, [contenteditable=true]") || document.querySelector("dialog[open]")) return;
       const k = e.key.toLowerCase();
@@ -72,7 +75,7 @@ function Panel() {
     };
     document.addEventListener("keydown", h);
     return () => document.removeEventListener("keydown", h);
-  }, [historial, modoVista, toast]);
+  }, [historial, modoVista, pestana, toast]);
 
   const palabras = useMemo(() => norm(busqueda).split(/\s+/).filter(Boolean), [busqueda]);
   const filtrando = palabras.length > 0;
@@ -148,12 +151,21 @@ function Panel() {
 
   return (
     <>
-      <div className="editbar">
-        ✏️ Modo edición: cambia nombres, precios, estados e imágenes directamente en cada producto. Para cambiar el orden, arrastra el asa <b>⠿ Mover</b>. Todo se guarda al instante y el catálogo público se actualiza solo.
-      </div>
+      {pestana === "catalogo" && (
+        <div className="editbar">
+          ✏️ Modo edición: cambia nombres, precios, estados e imágenes directamente en cada producto. Para cambiar el orden, arrastra el asa <b>⠿ Mover</b>. Todo se guarda al instante y el catálogo público se actualiza solo.
+        </div>
+      )}
       <header className="topbar">
         <div className="wrap bar">
           <a className="brand" href="#top"><span className="brand-ico">🫧</span><span id="brandName">{ajustes?.nombre ?? "Catálogo"}</span></a>
+          <nav className="tabs" aria-label="Secciones del panel">
+            <button type="button" className={pestana === "catalogo" ? "on" : ""} onClick={() => setPestana("catalogo")} title="Catálogo">🛍️<span className="tl"> Catálogo</span></button>
+            <button type="button" className={pestana === "solicitudes" ? "on" : ""} onClick={() => { setPestana("solicitudes"); setModoVista(false); }} title="Solicitudes de contacto">
+              📨<span className="tl"> Solicitudes</span>{nuevas ? <b title={`${nuevas} sin leer`}>{nuevas}</b> : null}
+            </button>
+          </nav>
+          {pestana === "catalogo" && <>
           <div className="search"><span className="sico">🔍</span>
             <input type="search" placeholder="Buscar producto…" aria-label="Buscar producto" autoComplete="off" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
           </div>
@@ -161,15 +173,17 @@ function Panel() {
             <option value="">Ir a departamento…</option>
             {categorias.map((c) => <option key={c._id} value={c._id}>{c.icono} {c.nombre}</option>)}
           </select>
+          </>}
           <span className="grow" />
-          <button type="button" className={`vistabtn${modoVista ? " on" : ""}`} onClick={() => setModoVista(!modoVista)} title="Ver el catálogo tal como lo ve el cliente">
+          {pestana === "catalogo" && <button type="button" className={`vistabtn${modoVista ? " on" : ""}`} onClick={() => setModoVista(!modoVista)} title="Ver el catálogo tal como lo ve el cliente">
             {modoVista ? "✏️ Volver a editar" : "👁 Vista cliente"}
-          </button>
+          </button>}
           <span className="userchip desk">{usuario?.email}</span>
           <button type="button" className="salir" onClick={() => void signOut()}>Salir</button>
         </div>
       </header>
 
+      {pestana === "solicitudes" ? <PaginaSolicitudes negocio={ajustes?.nombre ?? ""} /> : <>
       <main id="top">
         {modoVista && (
           <section className="hero wrap">
@@ -248,6 +262,7 @@ function Panel() {
         puedeRehacer={historial.puedeRehacer}
         pasos={historial.pasos}
       />
+      </>}
 
       <DialogoNuevoProducto
         open={dialogo?.tipo === "producto"}
