@@ -31,3 +31,9 @@ export function descargar(blob: Blob, nombre: string) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
+
+/** dd-mm-aaaa */
+export function fechaCorta(ms: number) {
+  const d = new Date(ms);
+  return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+}

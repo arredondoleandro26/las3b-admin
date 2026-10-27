@@ -11,6 +11,7 @@ import { DialogoNuevaCategoria } from "./components/DialogoNuevaCategoria";
 import { DialogoMover } from "./components/DialogoMover";
 import { DialogoAjustes } from "./components/DialogoAjustes";
 import { DialogoImportar } from "./components/DialogoImportar";
+import { DialogoArchivados } from "./components/DialogoArchivados";
 import { useFondo } from "./hooks/useFondo";
 import { useToast } from "./hooks/useToast";
 import { ESTADOS, descargar, norm } from "./lib/formato";
@@ -25,13 +26,14 @@ export default function App() {
   );
 }
 
-type Dialogo = { tipo: "producto"; catId: Id<"categorias"> | null } | { tipo: "categoria" } | { tipo: "mover" } | { tipo: "ajustes" } | { tipo: "importar" } | null;
+type Dialogo = { tipo: "producto"; catId: Id<"categorias"> | null } | { tipo: "categoria" } | { tipo: "mover" } | { tipo: "ajustes" } | { tipo: "importar" } | { tipo: "archivados" } | null;
 
 function Panel() {
   const { signOut } = useAuthActions();
   const toast = useToast();
   const usuario = useQuery(api.usuario.actual);
   const datos = useQuery(api.productos.listarTodo, usuario?.esAdmin ? {} : "skip");
+  const archivados = useQuery(api.productos.listarArchivados, usuario?.esAdmin ? {} : "skip");
 
   const [busqueda, setBusqueda] = useState("");
   const [modoVista, setModoVista] = useState(false);
@@ -222,6 +224,8 @@ function Panel() {
         onCsv={exportarCsv}
         onAjustes={() => setDialogo({ tipo: "ajustes" })}
         onImportar={() => setDialogo({ tipo: "importar" })}
+        onArchivados={() => setDialogo({ tipo: "archivados" })}
+        nArchivados={archivados?.length ?? 0}
       />
 
       <DialogoNuevoProducto
@@ -247,6 +251,7 @@ function Panel() {
         onMovidos={() => setSel(new Set())}
       />
       <DialogoAjustes open={dialogo?.tipo === "ajustes"} onClose={() => setDialogo(null)} ajustes={ajustes} />
+      <DialogoArchivados open={dialogo?.tipo === "archivados"} onClose={() => setDialogo(null)} categorias={categorias} onPurgado={() => {}} />
       <DialogoImportar open={dialogo?.tipo === "importar"} onClose={() => setDialogo(null)} hayDatos={hayDatos} />
     </>
   );

@@ -30,6 +30,7 @@ export function SeccionCategoria(props: Props) {
   const actualizarCat = useMutation(api.categorias.actualizar);
   const desplazar = useMutation(api.categorias.desplazar);
   const eliminarCat = useMutation(api.categorias.eliminar);
+  const restaurarCat = useMutation(api.categorias.restaurar);
   const reordenar = useMutation(api.productos.reordenar);
 
   const [nombre, setNombre] = useState(cat.nombre);
@@ -71,10 +72,15 @@ export function SeccionCategoria(props: Props) {
     const n = productos.length;
     const ok = confirm(
       `¿Eliminar la categoría “${cat.nombre}”${n ? ` y sus ${n} productos` : ""}?` +
-        (n ? "\n\nSi quieres conservar los productos, cancela y muévelos antes a otra categoría (botón ☑ de la categoría y luego «Mover a otra categoría»)." : ""),
+        (n ? "\n\nSus productos se moverán a «Archivados» y podrás restaurarlos." : ""),
     );
     if (!ok) return;
-    try { await eliminarCat({ id: cat._id }); toast(`🗑 Categoría “${cat.nombre}” eliminada`); } catch (e) { toast(mensaje(e)); }
+    try {
+      const archivados = await eliminarCat({ id: cat._id });
+      const k = archivados.length;
+      toast(`🗑 Categoría “${cat.nombre}” eliminada${k ? `; sus ${k} producto${k === 1 ? "" : "s"} están en Archivados` : ""}`, 9000,
+        { label: "↶ Deshacer", fn: () => void restaurarCat({ id: cat._id, productos: archivados }).catch((e) => toast(mensaje(e))) });
+    } catch (e) { toast(mensaje(e)); }
   }
 
   if (!productos.length && filtrando) return null;

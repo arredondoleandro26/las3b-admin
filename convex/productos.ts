@@ -4,14 +4,17 @@ import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { requerirAdmin } from "./lib/acceso";
 import { estadoValidator } from "./lib/validadores";
-
-async function productosDeCategoria(ctx: MutationCtx, catId: Id<"categorias">) {
-  return ctx.db.query("productos").withIndex("por_categoria", (q) => q.eq("catId", catId)).collect();
-}
+import { activosDeCategoria, archivarProductos, categoriasActivas, purgarArchivados, renumerar, restaurarProductos } from "./lib/archivo";
 
 async function siguienteOrden(ctx: MutationCtx, catId: Id<"categorias">) {
-  const lista = await productosDeCategoria(ctx, catId);
+  const lista = await activosDeCategoria(ctx, catId);
   return lista.reduce((m, p) => Math.max(m, p.orden), -1) + 1;
+}
+
+async function categoriaActiva(ctx: MutationCtx, catId: Id<"categorias">) {
+  const c = await ctx.db.get(catId);
+  if (!c || c.eliminada) throw new ConvexError("La categoría no existe.");
+  return c;
 }
 
 async function urlDe(ctx: MutationCtx, storageId: Id<"_storage">) {
@@ -20,13 +23,13 @@ async function urlDe(ctx: MutationCtx, storageId: Id<"_storage">) {
   return { storageId, url };
 }
 
-/** Vista completa para el panel: incluye descontinuados. */
+/** Vista completa para el panel: incluye descontinuados, pero no lo archivado. */
 export const listarTodo = query({
   args: {},
   handler: async (ctx) => {
     await requerirAdmin(ctx);
-    const categorias = await ctx.db.query("categorias").withIndex("por_orden").collect();
-    const productos = (await ctx.db.query("productos").collect()).sort((a, b) => a.orden - b.orden);
+    const categorias = await categoriasActivas(ctx);
+    const productos = (await ctx.db.query("productos").collect()).filter((p) => !p.archivado).sort((a, b) => a.orden - b.orden);
     const ajustes = (await ctx.db.query("ajustes").first()) ?? null;
     return { ajustes, categorias, productos };
   },
@@ -41,7 +44,7 @@ export const crear = mutation({
   },
   handler: async (ctx, { catId, nombre, precio, imagenes }) => {
     await requerirAdmin(ctx);
-    if (!(await ctx.db.get(catId))) throw new ConvexError("La categoría no existe.");
+    await categoriaActiva(ctx, catId);
     const limpio = nombre.trim();
     if (!limpio) throw new ConvexError("Escribe el nombre del producto.");
     if (!(precio >= 0)) throw new ConvexError("El precio debe ser un número mayor o igual a 0.");
@@ -71,7 +74,7 @@ export const actualizar = mutation({
   handler: async (ctx, { id, ...cambios }) => {
     await requerirAdmin(ctx);
     const p = await ctx.db.get(id);
-    if (!p) throw new ConvexError("El producto ya no existe.");
+    if (!p || p.archivado) throw new ConvexError("El producto ya no existe.");
     const patch: Partial<typeof p> = {};
     if (cambios.nombre !== undefined) {
       if (!cambios.nombre.trim()) throw new ConvexError("El nombre no puede quedar vacío.");
@@ -87,14 +90,60 @@ export const actualizar = mutation({
   },
 });
 
-export const eliminar = mutation({
-  args: { id: v.id("productos") },
-  handler: async (ctx, { id }) => {
+/* ---------------------------------- archivados ---------------------------------- */
+
+/** Productos eliminados, del más reciente al más antiguo. */
+export const listarArchivados = query({
+  args: {},
+  handler: async (ctx) => {
     await requerirAdmin(ctx);
-    const p = await ctx.db.get(id);
-    if (!p) return;
-    for (const img of p.imagenes) await ctx.storage.delete(img.storageId).catch(() => {});
-    await ctx.db.delete(id);
+    const todos = await ctx.db.query("productos").collect();
+    const archivados = todos.filter((p) => p.archivado).sort((a, b) => b.archivado!.fecha - a.archivado!.fecha);
+    const cats = new Map((await ctx.db.query("categorias").collect()).map((c) => [c._id, c]));
+    return archivados.map((p) => {
+      const c = cats.get(p.catId);
+      return {
+        _id: p._id,
+        nombre: p.nombre,
+        precio: p.precio,
+        estado: p.estado,
+        imagen: p.imagenes[0]?.url ?? null,
+        icono: c?.icono ?? "🛍️",
+        catId: p.catId,
+        catNombre: p.archivado!.catNombre,
+        /** "activa": vuelve a su lugar; "eliminada": se restaura también la categoría; "no-existe": hay que elegir otra. */
+        catEstado: !c ? "no-existe" : c.eliminada ? "eliminada" : "activa",
+        fecha: p.archivado!.fecha,
+      } as const;
+    });
+  },
+});
+
+/** «Eliminar» un producto: pasa a Archivados, desde donde se puede restaurar. */
+export const archivar = mutation({
+  args: { ids: v.array(v.id("productos")) },
+  handler: async (ctx, { ids }) => {
+    await requerirAdmin(ctx);
+    return await archivarProductos(ctx, ids);
+  },
+});
+
+/** Saca productos de Archivados: a su lugar original o, con `catId`, al final de esa categoría. */
+export const restaurar = mutation({
+  args: { ids: v.array(v.id("productos")), catId: v.optional(v.id("categorias")) },
+  handler: async (ctx, { ids, catId }) => {
+    await requerirAdmin(ctx);
+    return await restaurarProductos(ctx, ids, catId);
+  },
+});
+
+/** Borra para siempre productos archivados. Sin `ids`, vacía Archivados completo. */
+export const eliminarDefinitivo = mutation({
+  args: { ids: v.optional(v.array(v.id("productos"))) },
+  handler: async (ctx, { ids }) => {
+    await requerirAdmin(ctx);
+    const lista = ids ?? (await ctx.db.query("productos").collect()).filter((p) => p.archivado).map((p) => p._id);
+    return await purgarArchivados(ctx, lista);
   },
 });
 
@@ -103,20 +152,23 @@ export const moverCategoria = mutation({
   args: { ids: v.array(v.id("productos")), catId: v.id("categorias") },
   handler: async (ctx, { ids, catId }) => {
     await requerirAdmin(ctx);
-    if (!(await ctx.db.get(catId))) throw new ConvexError("La categoría de destino no existe.");
+    await categoriaActiva(ctx, catId);
     let orden = await siguienteOrden(ctx, catId);
     const docs = [];
     for (const id of ids) {
       const p = await ctx.db.get(id);
-      if (p) docs.push(p);
+      if (p && !p.archivado) docs.push(p);
     }
     docs.sort((a, b) => a.orden - b.orden);
     let movidos = 0;
+    const origenes = new Set<Id<"categorias">>();
     for (const p of docs) {
       if (p.catId === catId) continue;
+      origenes.add(p.catId);
       await ctx.db.patch(p._id, { catId, orden: orden++ });
       movidos++;
     }
+    for (const c of origenes) await renumerar(ctx, await activosDeCategoria(ctx, c));
     return movidos;
   },
 });
@@ -129,11 +181,11 @@ export const reordenar = mutation({
   args: { catId: v.id("categorias"), ids: v.array(v.id("productos")) },
   handler: async (ctx, { catId, ids }) => {
     await requerirAdmin(ctx);
-    const actuales = (await productosDeCategoria(ctx, catId)).sort((a, b) => a.orden - b.orden);
-    const enCat = new Set(actuales.map((p) => p._id));
-    const finales: Id<"productos">[] = ids.filter((id) => enCat.has(id));
-    for (const p of actuales) if (!finales.includes(p._id)) finales.push(p._id);
-    await Promise.all(finales.map((id, i) => ctx.db.patch(id, { orden: i })));
+    const actuales = await activosDeCategoria(ctx, catId);
+    const porId = new Map(actuales.map((p) => [p._id, p]));
+    const finales = [...new Set(ids)].filter((id) => porId.has(id)).map((id) => porId.get(id)!);
+    for (const p of actuales) if (!finales.includes(p)) finales.push(p);
+    await renumerar(ctx, finales);
   },
 });
 

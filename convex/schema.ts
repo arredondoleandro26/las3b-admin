@@ -1,7 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
-import { estadoValidator, imagenValidator } from "./lib/validadores";
+import { archivadoValidator, estadoValidator, imagenValidator } from "./lib/validadores";
 
 export default defineSchema({
   ...authTables,
@@ -24,6 +24,8 @@ export default defineSchema({
     nombre: v.string(),
     icono: v.string(),
     orden: v.number(),
+    /** Marca de tiempo si se eliminó: queda oculta, pero se puede restaurar (deshacer o desde Archivados). */
+    eliminada: v.optional(v.number()),
   }).index("por_orden", ["orden"]),
 
   productos: defineTable({
@@ -35,5 +37,7 @@ export default defineSchema({
     oferta: v.optional(v.boolean()),
     antes: v.optional(v.number()),
     imagenes: v.array(imagenValidator),
+    /** Presente si el producto se eliminó: está en «Archivados» y no se muestra en ninguna parte. */
+    archivado: v.optional(archivadoValidator),
   }).index("por_categoria", ["catId", "orden"]),
 });

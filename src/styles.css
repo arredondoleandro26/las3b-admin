@@ -226,6 +226,28 @@ dialog.np h3,dialog.np .np-msg,dialog.np menu{grid-column:1/-1}
 .np-prev .card:hover{transform:none}
 .np-msg{margin:0;min-height:1.2em;color:var(--red);font-weight:700;font-size:.88rem}
 .np-msg.ok{color:var(--brand-d)}
+
+/* ---------- archivados ---------- */
+dialog.arch{width:min(680px,calc(100% - 24px))}
+.arch-intro{margin:0;color:var(--muted);font-size:.9rem}
+.archbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.archbar input{flex:1 1 220px}
+.arch-count{font-weight:800;color:var(--brand-d)}
+.arch-list{display:flex;flex-direction:column;gap:8px;max-height:min(56vh,520px);overflow:auto;padding:2px 4px 2px 2px}
+.arch-list .empty{padding:34px 10px;font-size:1rem}
+.arow{display:grid;grid-template-columns:64px 1fr;gap:8px 12px;align-items:center;padding:10px;border:2px solid var(--line);border-radius:14px;background:#fff}
+.athumb{width:64px;height:64px;border-radius:10px;border:1px solid var(--line);display:grid;place-items:center;font-size:1.8rem;background:#fff;overflow:hidden}
+.athumb img{max-width:100%;max-height:100%;object-fit:contain}
+.ainfo{display:flex;flex-direction:column;gap:1px;min-width:0}
+.ainfo b{font-size:.95rem;word-break:break-word}
+.ainfo span{font-weight:800;color:var(--brand-d);font-size:.85rem}
+.ainfo small{color:var(--muted);font-size:.76rem}
+.aact{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.aact select{flex:1 1 200px;min-width:0}
+.aact .btn{padding:8px 14px;font-size:.85rem}
+.aact .danger{padding:8px 4px}
+.btn.btn-danger{border-color:var(--red);color:var(--red)}
+.btn:disabled{opacity:.5;cursor:default}
 dialog.np menu{flex-direction:row-reverse;justify-content:flex-start}
 .thumbs.drag{border-color:var(--brand);background:var(--brand-l)}
 /* categorías y mover productos */

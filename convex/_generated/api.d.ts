@@ -16,6 +16,7 @@ import type * as categorias from "../categorias.js";
 import type * as http from "../http.js";
 import type * as importar from "../importar.js";
 import type * as lib_acceso from "../lib/acceso.js";
+import type * as lib_archivo from "../lib/archivo.js";
 import type * as lib_validadores from "../lib/validadores.js";
 import type * as productos from "../productos.js";
 import type * as usuario from "../usuario.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   importar: typeof importar;
   "lib/acceso": typeof lib_acceso;
+  "lib/archivo": typeof lib_archivo;
   "lib/validadores": typeof lib_validadores;
   productos: typeof productos;
   usuario: typeof usuario;

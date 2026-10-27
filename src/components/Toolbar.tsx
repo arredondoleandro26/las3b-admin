@@ -7,6 +7,8 @@ type Props = {
   onCsv: () => void;
   onAjustes: () => void;
   onImportar: () => void;
+  onArchivados: () => void;
+  nArchivados: number;
   modoVista: boolean;
 };
 
@@ -24,6 +26,7 @@ export function Toolbar(p: Props) {
       <button type="button" onClick={p.onCsv}>📊 Exportar CSV</button>
       {!p.modoVista && (
         <>
+          <button type="button" onClick={p.onArchivados} title="Productos eliminados: restáuralos o elimínalos para siempre">🗄️ Archivados ({p.nArchivados})</button>
           <button type="button" onClick={p.onAjustes}>⚙️ Ajustes</button>
           <button type="button" onClick={p.onImportar}>📥 Importar</button>
         </>

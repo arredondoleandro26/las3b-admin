@@ -11,6 +11,14 @@ export const imagenValidator = v.object({
   url: v.string(),
 });
 
+export const archivadoValidator = v.object({
+  fecha: v.number(),
+  /** Nombre de la categoría al momento de archivar (por si después se elimina). */
+  catNombre: v.string(),
+  /** Producto que estaba justo antes en la categoría (null si era el primero): para devolverlo a su lugar. */
+  ancla: v.union(v.id("productos"), v.null()),
+});
+
 export const ajustesCampos = {
   nombre: v.string(),
   titulo: v.string(),

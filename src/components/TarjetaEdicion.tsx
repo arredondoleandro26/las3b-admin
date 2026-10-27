@@ -21,7 +21,8 @@ type Props = {
 export function TarjetaEdicion({ p, categorias, seleccionado, onSeleccion, fondo, arrastrable }: Props) {
   const toast = useToast();
   const actualizar = useMutation(api.productos.actualizar);
-  const eliminar = useMutation(api.productos.eliminar);
+  const archivar = useMutation(api.productos.archivar);
+  const restaurar = useMutation(api.productos.restaurar);
   const mover = useMutation(api.productos.moverCategoria);
   const agregarImagen = useMutation(api.productos.agregarImagen);
   const reemplazarImagen = useMutation(api.productos.reemplazarImagen);
@@ -80,8 +81,13 @@ export function TarjetaEdicion({ p, categorias, seleccionado, onSeleccion, fondo
   function onDrop(e: DragEvent) { e.preventDefault(); setDrag(false); modo.current = { tipo: "add" }; void procesarArchivos(e.dataTransfer.files); }
 
   async function borrar() {
-    if (!confirm(`¿Eliminar «${p.nombre}» del catálogo?`)) return;
-    try { await eliminar({ id: p._id }); toast(`🗑 «${p.nombre}» eliminado`); } catch (e) { toast(mensaje(e)); }
+    if (!confirm(`¿Eliminar «${p.nombre}»?
+
+Se moverá a «Archivados»: ahí podrás restaurarlo o eliminarlo para siempre.`)) return;
+    try {
+      await archivar({ ids: [p._id] });
+      toast(`🗑 «${p.nombre}» eliminado: quedó en Archivados`, 9000, { label: "↶ Deshacer", fn: () => void restaurar({ ids: [p._id] }).catch((e) => toast(mensaje(e))) });
+    } catch (e) { toast(mensaje(e)); }
   }
 
   const style = { transform: CSS.Transform.toString(transform), transition };
