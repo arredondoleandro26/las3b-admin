@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { requerirAdmin } from "./lib/acceso";
-import { AJUSTES_POR_DEFECTO, ajustesCampos } from "./lib/validadores";
+import { AJUSTES_POR_DEFECTO, ajustesCampos, contactoValidator } from "./lib/validadores";
 import type { MutationCtx } from "./_generated/server";
 
 /** Devuelve la fila de ajustes, creándola con valores por defecto si no existe. */
@@ -43,5 +43,17 @@ export const cambiarBanner = mutation({
     const url = await ctx.storage.getUrl(storageId);
     if (!url) throw new Error("El archivo del banner no existe.");
     await ctx.db.patch(a._id, { bannerId: storageId, bannerUrl: url });
+  },
+});
+
+/**
+ * Cambia el título o los datos de contacto desde la terminal (sin sesión), p. ej.:
+ *   npx convex run --prod ajustes:actualizarInterno '{"titulo":"Catálogo de productos"}'
+ */
+export const actualizarInterno = internalMutation({
+  args: { titulo: v.optional(v.string()), contacto: v.optional(contactoValidator) },
+  handler: async (ctx, cambios) => {
+    const a = await obtenerOCrearAjustes(ctx);
+    await ctx.db.patch(a._id, cambios);
   },
 });
