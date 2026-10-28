@@ -5,6 +5,7 @@ import type { Doc } from "../../convex/_generated/dataModel";
 import { fechaHora } from "../lib/formato";
 import { mensaje } from "../lib/errores";
 import { useToast } from "../hooks/useToast";
+import { useConfirmar } from "../hooks/useConfirmar";
 
 type Estado = Doc<"solicitudes">["estado"];
 type Filtro = Estado | "todas";
@@ -15,6 +16,7 @@ const FILTROS: [Filtro, string][] = [["todas", "Todas"], ["nueva", "Nuevas"], ["
 /** Bandeja de los mensajes que llegan desde «Contáctanos» del catálogo. */
 export function PaginaSolicitudes({ negocio }: { negocio: string }) {
   const toast = useToast();
+  const confirmar = useConfirmar();
   const solicitudes = useQuery(api.solicitudes.listar);
   const marcar = useMutation(api.solicitudes.marcar);
   const eliminar = useMutation(api.solicitudes.eliminar);
@@ -29,12 +31,10 @@ export function PaginaSolicitudes({ negocio }: { negocio: string }) {
   /** Al usar un medio para responder, la solicitud deja de estar «nueva». */
   const alResponder = (s: Doc<"solicitudes">) => { if (s.estado === "nueva") cambiar(s, "leida"); };
 
-  /** Pide confirmación en el toast: si no se pulsa «Eliminar» antes de que se cierre, no pasa nada. */
-  function borrar(s: Doc<"solicitudes">) {
-    toast(`¿Eliminar la solicitud de ${s.nombre}? No se podrá recuperar.`, 6000, {
-      label: "🗑 Eliminar",
-      fn: () => void eliminar({ id: s._id }).then(() => toast("🗑 Solicitud eliminada")).catch((e) => toast(mensaje(e))),
-    });
+  async function borrar(s: Doc<"solicitudes">) {
+    const ok = await confirmar({ titulo: `¿Eliminar la solicitud de ${s.nombre}?`, mensaje: "No se podrá recuperar.", aceptar: "🗑 Eliminar", peligro: true });
+    if (!ok) return;
+    void eliminar({ id: s._id }).then(() => toast("🗑 Solicitud eliminada")).catch((e) => toast(mensaje(e)));
   }
 
   return (
@@ -81,7 +81,7 @@ export function PaginaSolicitudes({ negocio }: { negocio: string }) {
                 {s.estado === "nueva"
                   ? <button type="button" className="btn ghost" onClick={() => cambiar(s, "leida")}>Marcar leída</button>
                   : <button type="button" className="btn ghost" onClick={() => cambiar(s, "nueva")}>Marcar como nueva</button>}
-                <button type="button" className="danger" onClick={() => borrar(s)}>🗑 Eliminar</button>
+                <button type="button" className="danger" onClick={() => void borrar(s)}>🗑 Eliminar</button>
               </div>
             </article>
           );

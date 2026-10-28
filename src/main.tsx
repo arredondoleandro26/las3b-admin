@@ -4,6 +4,7 @@ import { ConvexReactClient } from "convex/react";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import App from "./App";
 import { ToastProvider } from "./hooks/useToast";
+import { ConfirmarProvider } from "./hooks/useConfirmar";
 import "./styles.css";
 
 const url = import.meta.env.VITE_CONVEX_URL as string | undefined;
@@ -16,7 +17,9 @@ if (!url) {
     <StrictMode>
       <ConvexAuthProvider client={convex}>
         <ToastProvider>
-          <App />
+          <ConfirmarProvider>
+            <App />
+          </ConfirmarProvider>
         </ToastProvider>
       </ConvexAuthProvider>
     </StrictMode>,
