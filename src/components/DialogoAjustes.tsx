@@ -8,6 +8,7 @@ import { Modal } from "./Modal";
 import { mensaje } from "./TarjetaEdicion";
 import { useToast } from "../hooks/useToast";
 import { useHistorial } from "../hooks/useHistorial";
+import { useConfirmar } from "../hooks/useConfirmar";
 
 type Props = { open: boolean; onClose: () => void; ajustes: Doc<"ajustes"> | null };
 
@@ -38,6 +39,7 @@ export function DialogoAjustes({ open, onClose, ajustes }: Props) {
 function Formulario({ onClose, ajustes }: Omit<Props, "open">) {
   const toast = useToast();
   const h = useHistorial();
+  const confirmar = useConfirmar();
   const actualizar = useMutation(api.ajustes.actualizar);
   const cambiarBanner = useMutation(api.ajustes.cambiarBanner);
   const subir = useSubirArchivo();
@@ -133,7 +135,7 @@ function Formulario({ onClose, ajustes }: Omit<Props, "open">) {
             {subiendoBanner ? "Subiendo…" : "🖼️ Cambiar banner"}
           </button>
           {ajustes?.bannerUrl && (
-            <button type="button" className="btn ghost" onClick={() => { if (confirm("¿Quitar el banner de portada?")) void banner(null, "banner quitado").catch((er) => toast(mensaje(er))); }}>Quitar banner</button>
+            <button type="button" className="btn ghost" onClick={() => void confirmar({ titulo: "¿Quitar el banner de portada?", aceptar: "Quitar banner" }).then((ok) => { if (ok) return banner(null, "banner quitado"); }).catch((er) => toast(mensaje(er)))}>Quitar banner</button>
           )}
         </div>
         <input ref={picker} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void nuevoBanner(f); }} />

@@ -9,6 +9,7 @@ import { TarjetaEdicion, mensaje } from "./TarjetaEdicion";
 import { TarjetaVista } from "./TarjetaVista";
 import { useToast } from "../hooks/useToast";
 import { useHistorial } from "../hooks/useHistorial";
+import { useConfirmar } from "../hooks/useConfirmar";
 
 type Props = {
   cat: Doc<"categorias">;
@@ -29,6 +30,7 @@ export function SeccionCategoria(props: Props) {
   const { cat, productos, categorias, sel, onSeleccion, onSeleccionarCat, onAgregarProducto, filtrando, modoVista, fondo, esPrimera, esUltima } = props;
   const toast = useToast();
   const h = useHistorial();
+  const confirmar = useConfirmar();
   const actualizarCat = useMutation(api.categorias.actualizar);
   const desplazar = useMutation(api.categorias.desplazar);
   const eliminarCat = useMutation(api.categorias.eliminar);
@@ -78,10 +80,12 @@ export function SeccionCategoria(props: Props) {
 
   async function borrarCategoria() {
     const n = productos.length;
-    const ok = confirm(
-      `¿Eliminar la categoría “${cat.nombre}”${n ? ` y sus ${n} productos` : ""}?` +
-        (n ? "\n\nSus productos se moverán a «Archivados» y podrás restaurarlos." : ""),
-    );
+    const ok = await confirmar({
+      titulo: `¿Eliminar la categoría “${cat.nombre}”${n ? ` y sus ${n} productos` : ""}?`,
+      mensaje: n ? "Sus productos se moverán a «Archivados» y podrás restaurarlos." : undefined,
+      aceptar: "🗑 Eliminar",
+      peligro: true,
+    });
     if (!ok) return;
     const id = cat._id;
     try {

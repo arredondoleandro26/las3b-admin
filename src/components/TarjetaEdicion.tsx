@@ -9,6 +9,7 @@ import { MENSAJE_FONDO_FALLO, procesarProducto, type OpcionesFondo } from "../li
 import { useSubirArchivo } from "../lib/subir";
 import { useToast } from "../hooks/useToast";
 import { useHistorial } from "../hooks/useHistorial";
+import { useConfirmar } from "../hooks/useConfirmar";
 import { useAcciones } from "../hooks/useAcciones";
 import { mensaje } from "../lib/errores";
 
@@ -24,6 +25,7 @@ type Props = {
 export function TarjetaEdicion({ p, categorias, seleccionado, onSeleccion, fondo, arrastrable }: Props) {
   const toast = useToast();
   const h = useHistorial();
+  const confirmar = useConfirmar();
   const { moverProductos, eliminarProductos } = useAcciones();
   const actualizar = useMutation(api.productos.actualizar);
   const fijarImagenes = useMutation(api.productos.fijarImagenes);
@@ -117,7 +119,7 @@ export function TarjetaEdicion({ p, categorias, seleccionado, onSeleccion, fondo
   function onDrop(e: DragEvent) { e.preventDefault(); setDrag(false); modo.current = { tipo: "add" }; void procesarArchivos(e.dataTransfer.files); }
 
   async function borrar() {
-    if (!confirm(`¿Eliminar «${p.nombre}»?\n\nSe moverá a «Archivados»: ahí podrás restaurarlo o eliminarlo para siempre.`)) return;
+    if (!(await confirmar({ titulo: `¿Eliminar «${p.nombre}»?`, mensaje: "Se moverá a «Archivados»: ahí podrás restaurarlo o eliminarlo para siempre.", aceptar: "🗑 Eliminar", peligro: true }))) return;
     try { await eliminarProductos([p._id], `🗑 «${p.nombre}» eliminado: quedó en Archivados`); } catch (e) { toast(mensaje(e)); }
   }
 

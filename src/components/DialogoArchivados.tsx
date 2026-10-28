@@ -5,6 +5,7 @@ import type { Doc, Id } from "../../convex/_generated/dataModel";
 import { ESTADOS, fechaCorta, fmt, norm } from "../lib/formato";
 import { Modal } from "./Modal";
 import { useHistorial } from "../hooks/useHistorial";
+import { useConfirmar } from "../hooks/useConfirmar";
 import { mensaje } from "./TarjetaEdicion";
 
 type Props = {
@@ -28,6 +29,7 @@ const ORIGINAL = "__original";
 function Contenido({ onClose, categorias, onPurgado }: Omit<Props, "open">) {
   const archivados = useQuery(api.productos.listarArchivados);
   const h = useHistorial();
+  const confirmar = useConfirmar();
   const restaurar = useMutation(api.productos.restaurar);
   const archivar = useMutation(api.productos.archivar);
   const eliminarDefinitivo = useMutation(api.productos.eliminarDefinitivo);
@@ -59,8 +61,8 @@ function Contenido({ onClose, categorias, onPurgado }: Omit<Props, "open">) {
     });
   }
 
-  function borrar(a: Archivado) {
-    if (!confirm(`¿Eliminar para siempre «${a.nombre}»?\n\nNo se podrá recuperar ni deshacer.`)) return;
+  async function borrar(a: Archivado) {
+    if (!(await confirmar({ titulo: `¿Eliminar para siempre «${a.nombre}»?`, mensaje: "No se podrá recuperar ni deshacer.", aceptar: "🗑 Eliminar para siempre", peligro: true }))) return;
     void correr(async () => {
       const r = await eliminarDefinitivo({ ids: [a._id] });
       onPurgado({ productos: [a._id], categorias: r.categorias });
@@ -68,9 +70,11 @@ function Contenido({ onClose, categorias, onPurgado }: Omit<Props, "open">) {
     });
   }
 
-  function vaciar() {
+  async function vaciar() {
     const n = archivados?.length ?? 0;
-    if (!n || !confirm(`¿Eliminar para siempre los ${n} producto${n === 1 ? "" : "s"} archivado${n === 1 ? "" : "s"}?\n\nNo se podrá recuperar ni deshacer.`)) return;
+    if (!n) return;
+    const s = n === 1 ? "" : "s";
+    if (!(await confirmar({ titulo: `¿Eliminar para siempre los ${n} producto${s} archivado${s}?`, mensaje: "No se podrá recuperar ni deshacer.", aceptar: "🗑 Vaciar archivados", peligro: true }))) return;
     const ids = archivados!.map((a) => a._id);
     void correr(async () => {
       const r = await eliminarDefinitivo({ ids });
@@ -118,14 +122,14 @@ function Contenido({ onClose, categorias, onPurgado }: Omit<Props, "open">) {
                 {categorias.filter((c) => c._id !== a.catId).map((c) => <option key={c._id} value={c._id}>{c.icono} {c.nombre}</option>)}
               </select>
               <button type="button" className="btn" disabled={ocupado} onClick={() => volver(a)}>↩ Restaurar</button>
-              <button type="button" className="danger" disabled={ocupado} onClick={() => borrar(a)}>🗑 Eliminar para siempre</button>
+              <button type="button" className="danger" disabled={ocupado} onClick={() => void borrar(a)}>🗑 Eliminar para siempre</button>
             </div>
           </div>
         ))}
       </div>
       <p className={`np-msg${msg?.ok ? " ok" : ""}`} role="alert">{msg?.t}</p>
       <menu>
-        <button type="button" className="btn btn-danger" disabled={!total || ocupado} onClick={vaciar}>🗑 Vaciar archivados</button>
+        <button type="button" className="btn btn-danger" disabled={!total || ocupado} onClick={() => void vaciar()}>🗑 Vaciar archivados</button>
         <button type="button" className="btn" onClick={onClose}>Cerrar</button>
       </menu>
     </form>

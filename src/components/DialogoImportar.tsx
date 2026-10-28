@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useMutation } from "convex/react";
 import { contactoImportado, type CampoContacto } from "../../convex/lib/contacto";
 import { useHistorial } from "../hooks/useHistorial";
+import { useConfirmar } from "../hooks/useConfirmar";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { dataUriABlob } from "../lib/imagen";
@@ -46,6 +47,7 @@ function extraerJSON(texto: string): CatalogoAntiguo {
 function Importador({ onClose, hayDatos }: Omit<Props, "open">) {
   const subir = useSubirArchivo();
   const h = useHistorial();
+  const confirmar = useConfirmar();
   const vaciar = useMutation(api.importar.vaciar);
   const impCategorias = useMutation(api.importar.categorias);
   const impProductos = useMutation(api.importar.productos);
@@ -81,7 +83,12 @@ function Importador({ onClose, hayDatos }: Omit<Props, "open">) {
 
   async function importar() {
     if (!datos) return;
-    if (reemplazar && !confirm("Se borrarán TODAS las categorías, productos e imágenes actuales antes de importar. ¿Continuar?")) return;
+    if (reemplazar && !(await confirmar({
+      titulo: "¿Reemplazar todo el catálogo?",
+      mensaje: "Se borrarán TODAS las categorías, productos e imágenes actuales antes de importar. No se puede deshacer.",
+      aceptar: "Borrar e importar",
+      peligro: true,
+    }))) return;
     setCorriendo(true); setError(""); setLog([]);
     h.limpiar(); // una importación no se deshace paso a paso
     try {
