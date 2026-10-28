@@ -29,9 +29,12 @@ export function PaginaSolicitudes({ negocio }: { negocio: string }) {
   /** Al usar un medio para responder, la solicitud deja de estar «nueva». */
   const alResponder = (s: Doc<"solicitudes">) => { if (s.estado === "nueva") cambiar(s, "leida"); };
 
+  /** Pide confirmación en el toast: si no se pulsa «Eliminar» antes de que se cierre, no pasa nada. */
   function borrar(s: Doc<"solicitudes">) {
-    if (!confirm(`¿Eliminar la solicitud de ${s.nombre}?\n\nNo se podrá recuperar.`)) return;
-    void eliminar({ id: s._id }).then(() => toast("🗑 Solicitud eliminada")).catch((e) => toast(mensaje(e)));
+    toast(`¿Eliminar la solicitud de ${s.nombre}? No se podrá recuperar.`, 6000, {
+      label: "🗑 Eliminar",
+      fn: () => void eliminar({ id: s._id }).then(() => toast("🗑 Solicitud eliminada")).catch((e) => toast(mensaje(e))),
+    });
   }
 
   return (
