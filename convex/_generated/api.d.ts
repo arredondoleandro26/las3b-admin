@@ -20,6 +20,7 @@ import type * as importar from "../importar.js";
 import type * as lib_acceso from "../lib/acceso.js";
 import type * as lib_archivo from "../lib/archivo.js";
 import type * as lib_contacto from "../lib/contacto.js";
+import type * as lib_precio from "../lib/precio.js";
 import type * as lib_validadores from "../lib/validadores.js";
 import type * as notificaciones from "../notificaciones.js";
 import type * as productos from "../productos.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   "lib/acceso": typeof lib_acceso;
   "lib/archivo": typeof lib_archivo;
   "lib/contacto": typeof lib_contacto;
+  "lib/precio": typeof lib_precio;
   "lib/validadores": typeof lib_validadores;
   notificaciones: typeof notificaciones;
   productos: typeof productos;

@@ -70,6 +70,8 @@ export const actualizar = mutation({
     oferta: v.optional(v.boolean()),
     /** null quita el precio anterior */
     antes: v.optional(v.union(v.number(), v.null())),
+    /** null quita el precio de oferta */
+    precioOferta: v.optional(v.union(v.number(), v.null())),
   },
   handler: async (ctx, { id, ...cambios }) => {
     await requerirAdmin(ctx);
@@ -85,6 +87,9 @@ export const actualizar = mutation({
     if (cambios.oferta !== undefined) patch.oferta = cambios.oferta;
     if (cambios.antes !== undefined) {
       patch.antes = cambios.antes === null ? undefined : Math.max(0, Math.round(cambios.antes));
+    }
+    if (cambios.precioOferta !== undefined) {
+      patch.precioOferta = cambios.precioOferta === null ? undefined : Math.max(0, Math.round(cambios.precioOferta));
     }
     await ctx.db.patch(id, patch);
   },

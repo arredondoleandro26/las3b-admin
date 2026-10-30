@@ -9,6 +9,7 @@ import { mensaje } from "./TarjetaEdicion";
 import { useToast } from "../hooks/useToast";
 import { useHistorial } from "../hooks/useHistorial";
 import { useConfirmar } from "../hooks/useConfirmar";
+import { CargandoBurbujas } from "./CargandoBurbujas";
 
 type Props = { open: boolean; onClose: () => void; ajustes: Doc<"ajustes"> | null };
 
@@ -107,6 +108,7 @@ function Formulario({ onClose, ajustes }: Omit<Props, "open">) {
 
   return (
     <form onSubmit={enviar}>
+      {(ocupado || subiendoBanner) && <CargandoBurbujas texto={subiendoBanner ? "Subiendo banner…" : "Guardando ajustes…"} />}
       <h3>⚙️ Ajustes del catálogo</h3>
       {CAMPOS.map(([k, label, ph]) => (
         <label key={k}>{label}<input name={k} defaultValue={ajustes?.[k] ?? ""} placeholder={ph} /></label>

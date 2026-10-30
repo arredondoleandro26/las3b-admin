@@ -10,6 +10,7 @@ import { enParalelo, useSubirArchivo } from "../lib/subir";
 import type { Estado } from "../lib/formato";
 import { Modal } from "./Modal";
 import { mensaje } from "./TarjetaEdicion";
+import { CargandoBurbujas } from "./CargandoBurbujas";
 
 /** Forma del JSON embebido en el catálogo HTML antiguo (<script id="catalog-data">). */
 type CatalogoAntiguo = {
@@ -169,6 +170,7 @@ function Importador({ onClose, hayDatos }: Omit<Props, "open">) {
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); void importar(); }}>
+      {corriendo && <CargandoBurbujas texto={progreso ? `Importando… ${progreso.hecho} / ${progreso.total}` : "Importando…"} />}
       <h3>📥 Importar catálogo antiguo</h3>
       {!datos && (
         <div className="filepick">

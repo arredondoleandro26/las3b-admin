@@ -7,6 +7,7 @@ import { Modal } from "./Modal";
 import { useHistorial } from "../hooks/useHistorial";
 import { useConfirmar } from "../hooks/useConfirmar";
 import { mensaje } from "./TarjetaEdicion";
+import { CargandoBurbujas } from "./CargandoBurbujas";
 
 type Props = {
   open: boolean;
@@ -87,6 +88,7 @@ function Contenido({ onClose, categorias, onPurgado }: Omit<Props, "open">) {
 
   return (
     <form onSubmit={(e) => e.preventDefault()}>
+      {ocupado && <CargandoBurbujas texto="Un momento…" />}
       <h3>🗄️ Archivados</h3>
       <p className="arch-intro">
         Aquí quedan los productos que eliminas. Puedes <b>restaurarlos</b> a su categoría o <b>eliminarlos para siempre</b>. Los clientes no los ven.
@@ -96,7 +98,7 @@ function Contenido({ onClose, categorias, onPurgado }: Omit<Props, "open">) {
         {total > 0 && <span className="arch-count">{total} producto{total === 1 ? "" : "s"}</span>}
       </div>
       <div className="arch-list">
-        {archivados === undefined && <p className="empty">Cargando…</p>}
+        {archivados === undefined && <CargandoBurbujas modo="bloque" texto="Cargando archivados…" />}
         {archivados && !lista.length && (
           <p className="empty">{total ? "Ningún archivado coincide con la búsqueda." : "No hay productos archivados. Cuando elimines un producto, quedará aquí."}</p>
         )}

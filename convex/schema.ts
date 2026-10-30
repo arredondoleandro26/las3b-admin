@@ -46,6 +46,8 @@ export default defineSchema({
     orden: v.number(),
     oferta: v.optional(v.boolean()),
     antes: v.optional(v.number()),
+    /** Precio que se cobra mientras el producto está en oferta (el precio normal se muestra tachado). */
+    precioOferta: v.optional(v.number()),
     imagenes: v.array(imagenValidator),
     /** Presente si el producto se eliminó: está en «Archivados» y no se muestra en ninguna parte. */
     archivado: v.optional(archivadoValidator),

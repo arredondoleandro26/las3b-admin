@@ -17,11 +17,12 @@ import { useFondo } from "./hooks/useFondo";
 import { useToast } from "./hooks/useToast";
 import { HistorialProvider, useHistorial } from "./hooks/useHistorial";
 import { ESTADOS, descargar, norm } from "./lib/formato";
+import { CargandoBurbujas } from "./components/CargandoBurbujas";
 
 export default function App() {
   return (
     <>
-      <AuthLoading><div className="cargando">Cargando…</div></AuthLoading>
+      <AuthLoading><CargandoBurbujas modo="pantalla" texto="Cargando…" /></AuthLoading>
       <Unauthenticated><Login /></Unauthenticated>
       <Authenticated><HistorialProvider><Panel /></HistorialProvider></Authenticated>
     </>
@@ -97,7 +98,7 @@ function Panel() {
     return m;
   }, [datos, palabras, filtrando, modoVista]);
 
-  if (usuario === undefined) return <div className="cargando">Cargando…</div>;
+  if (usuario === undefined) return <CargandoBurbujas modo="pantalla" texto="Cargando…" />;
   if (usuario && !usuario.esAdmin) {
     return (
       <div className="login">
@@ -109,7 +110,7 @@ function Panel() {
       </div>
     );
   }
-  if (!datos) return <div className="cargando">Cargando catálogo…</div>;
+  if (!datos) return <CargandoBurbujas modo="pantalla" texto="Cargando catálogo…" />;
 
   const { categorias, productos, ajustes } = datos;
 
@@ -126,9 +127,9 @@ function Panel() {
   }
 
   function exportarCsv() {
-    const rows: (string | number)[][] = [["Categoría", "Producto", "Precio", "Estado", "Oferta", "Precio anterior"]];
+    const rows: (string | number)[][] = [["Categoría", "Producto", "Precio", "Estado", "Oferta", "Precio oferta", "Precio anterior"]];
     for (const c of categorias) for (const p of productos.filter((x) => x.catId === c._id)) {
-      rows.push([c.nombre, p.nombre, p.precio, ESTADOS[p.estado], p.oferta ? "Sí" : "", p.oferta && p.antes ? p.antes : ""]);
+      rows.push([c.nombre, p.nombre, p.precio, ESTADOS[p.estado], p.oferta ? "Sí" : "", p.oferta && p.precioOferta ? p.precioOferta : "", p.oferta && p.antes ? p.antes : ""]);
     }
     const csv = "﻿" + rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(";")).join("\r\n");
     descargar(new Blob([csv], { type: "text/csv;charset=utf-8" }), `Precios ${ajustes?.periodo ?? ""}.csv`.replace(/\s+/g, " "));

@@ -9,6 +9,7 @@ import { TarjetaVista } from "./TarjetaVista";
 import { mensaje } from "./TarjetaEdicion";
 import { useToast } from "../hooks/useToast";
 import { useHistorial } from "../hooks/useHistorial";
+import { CargandoBurbujas } from "./CargandoBurbujas";
 
 type Pendiente = { key: string; src: ImageBitmap; blob: Blob; url: string; removed: boolean | null };
 
@@ -131,6 +132,7 @@ function Formulario({ onClose, categorias, catInicial, fondo, setFondo }: Omit<P
 
   return (
     <form onSubmit={enviar} onPaste={onPaste}>
+      {ocupado && <CargandoBurbujas texto="Agregando producto…" />}
       <h3>＋ Agregar producto nuevo</h3>
       <div className="np-fields">
         <label>Categoría

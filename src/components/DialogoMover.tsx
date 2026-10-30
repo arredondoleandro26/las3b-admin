@@ -6,6 +6,7 @@ import { Modal } from "./Modal";
 import { mensaje } from "./TarjetaEdicion";
 import { useToast } from "../hooks/useToast";
 import { useAcciones } from "../hooks/useAcciones";
+import { CargandoBurbujas } from "./CargandoBurbujas";
 
 type Props = {
   open: boolean;
@@ -62,6 +63,7 @@ function Formulario({ onClose, categorias, productos, ids, onMovidos }: Omit<Pro
 
   return (
     <form onSubmit={enviar}>
+      {ocupado && <CargandoBurbujas texto="Moviendo productos…" />}
       <h3>↔ Mover productos de categoría</h3>
       <p style={{ margin: 0, color: "var(--muted)" }}>{info}</p>
       <label>Categoría de destino

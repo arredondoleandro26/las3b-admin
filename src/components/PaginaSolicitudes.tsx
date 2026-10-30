@@ -6,6 +6,7 @@ import { fechaHora } from "../lib/formato";
 import { mensaje } from "../lib/errores";
 import { useToast } from "../hooks/useToast";
 import { useConfirmar } from "../hooks/useConfirmar";
+import { CargandoBurbujas } from "./CargandoBurbujas";
 
 type Estado = Doc<"solicitudes">["estado"];
 type Filtro = Estado | "todas";
@@ -51,7 +52,7 @@ export function PaginaSolicitudes({ negocio }: { negocio: string }) {
         </div>
       </div>
 
-      {solicitudes === undefined && <div className="empty">Cargando…</div>}
+      {solicitudes === undefined && <CargandoBurbujas modo="bloque" texto="Cargando solicitudes…" />}
       {solicitudes && !lista.length && (
         <div className="empty">{solicitudes.length ? "No hay solicitudes con ese filtro." : "Aún no llegan solicitudes. Cuando alguien escriba en «Contáctanos», aparecerá aquí."}</div>
       )}

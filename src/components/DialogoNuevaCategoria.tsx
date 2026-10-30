@@ -6,6 +6,7 @@ import { Modal } from "./Modal";
 import { mensaje } from "./TarjetaEdicion";
 import { useToast } from "../hooks/useToast";
 import { useHistorial } from "../hooks/useHistorial";
+import { CargandoBurbujas } from "./CargandoBurbujas";
 
 export const EMOJIS = ["🧽", "🪣", "🧺", "🧴", "🧼", "🧻", "🧹", "🌸", "🧑‍🍳", "🩹", "🧷", "👶", "👵", "🥽", "🍽️", "🏭", "🧪", "🐜", "🚗", "🛍️", "🎁", "🧸", "🐶", "🪴", "🔧", "💡", "🧃", "🍬"];
 
@@ -61,6 +62,7 @@ function Formulario({ onClose, categorias, onCrearYAgregar }: Omit<Props, "open"
 
   return (
     <form onSubmit={enviar}>
+      {ocupado && <CargandoBurbujas texto="Creando categoría…" />}
       <h3>＋ Agregar categoría nueva</h3>
       <label>Nombre de la categoría
         <input value={nombre} onChange={(e) => setNombre(e.target.value)} required maxLength={80} autoComplete="off" placeholder="Ej: JUGUETES" autoFocus />

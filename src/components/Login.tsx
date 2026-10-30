@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { ConvexError } from "convex/values";
+import { CargandoBurbujas } from "./CargandoBurbujas";
 
 export function Login() {
   const { signIn } = useAuthActions();
@@ -27,6 +28,7 @@ export function Login() {
   return (
     <div className="login">
       <form onSubmit={enviar}>
+        {ocupado && <CargandoBurbujas texto={flow === "signIn" ? "Entrando…" : "Creando cuenta…"} />}
         <h1>🫧 Administración del catálogo</h1>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: ".88rem" }}>
           {flow === "signIn" ? "Ingresa con tu correo y contraseña." : "Crea tu cuenta de administrador (solo correos autorizados)."}

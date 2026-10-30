@@ -1,6 +1,7 @@
 import { query } from "./_generated/server";
 import { AJUSTES_POR_DEFECTO, CONTACTO_VACIO } from "./lib/validadores";
 import { categoriasActivas } from "./lib/archivo";
+import { precioPublico } from "./lib/precio";
 
 /**
  * Query PÚBLICA: todo lo que necesita el catálogo para pintarse.
@@ -37,11 +38,12 @@ export const obtener = query({
           _id: p._id,
           catId: p.catId,
           nombre: p.nombre,
-          precio: p.precio,
+          // Con precio de oferta, «precio» ya viene rebajado y «antes» trae el precio normal:
+          // el catálogo lo muestra y cobra sin cambios en su código.
+          ...precioPublico(p),
           estado: p.estado,
           orden: p.orden,
           oferta: p.oferta ?? false,
-          antes: p.antes ?? null,
           imagenes: p.imagenes.map((i) => i.url),
         })),
     };
